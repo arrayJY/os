@@ -13,6 +13,12 @@ panic="abort"
 
 [dependencies]
 bootloader = "0.9.14"
+volatile = "0.4.3"
+spin = "0.7.1"
+
+[dependencies.lazy_static]
+lazy_static = "1.4.0"
+features = ["spin_no_std"]
 
 [package.metadata.bootimage]
 build-command = ["xbuild"]
