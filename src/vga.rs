@@ -103,7 +103,16 @@ impl Writer {
     }
     fn new_line(&mut self) {
         self.column_position = 0;
-        self.row_position += 1;
+        if self.row_position < BUFFER_HEIGHT - 1 {
+            self.row_position += 1;
+        } else {
+            for i in 1..BUFFER_HEIGHT {
+                for j in 0..BUFFER_WIDTH {
+                    let c = self.buffer.characters[i][j].read();
+                    self.buffer.characters[i - 1][j].write(c);
+                }
+            }
+        }
     }
 }
 
@@ -138,4 +147,23 @@ macro_rules! println {
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
     WRITER.lock().write_fmt(args).unwrap();
+}
+
+#[cfg(test)]
+use crate::{serial_print, serial_println};
+
+#[test_case]
+fn test_println_simple() {
+    serial_print!("test_println_many -> ");
+    println!("test_println_simple output");
+    serial_println!("[ok]");
+}
+
+#[test_case]
+fn test_println_many() {
+    serial_print!("test_println -> ");
+    for _ in 0..200 {
+        println!("test_println_simple output");
+    }
+    serial_println!("[ok]");
 }
