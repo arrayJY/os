@@ -2,7 +2,7 @@
 #![no_main]
 #![feature(exclusive_range_pattern)]
 
-mod vga_buffer;
+mod vga;
 use core::panic::PanicInfo;
 
 #[no_mangle]
