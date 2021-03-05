@@ -30,3 +30,7 @@ test-args = [
 ]
 test-success-exit-code = 33
 test-timeout = 100 
+
+[[test]]
+name = "should_panic"
+harness = false
