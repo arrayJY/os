@@ -15,7 +15,7 @@ pub struct Selectors {
     */
 }
 
-#[repr(u8)]
+#[repr(u16)]
 pub enum ISTIndex {
     DoubleFault = 0,
 }
@@ -40,6 +40,7 @@ lazy_static! {
             static mut STACK: [u8; STACK_SIZE] = [0; STACK_SIZE];
             let stack_bottom = VirtAddr::from_ptr(unsafe { &STACK });
             let stack_top = stack_bottom + STACK_SIZE;
+            stack_top
         };
         tss
     };
@@ -49,16 +50,15 @@ pub fn init() {
     use x86_64::instructions::segmentation::set_cs;
     use x86_64::instructions::tables::load_tss;
     let (
-        gdt,
+        ref gdt,
         Selectors {
             kernel_code_seg,
             task_state_seg,
         },
-    ) = GDT;
+    ) = *GDT;
     gdt.load();
-
     unsafe {
-        set_cs(kenerl_code_seg);
+        set_cs(kernel_code_seg);
         load_tss(task_state_seg);
     }
 }

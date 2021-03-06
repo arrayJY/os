@@ -13,6 +13,7 @@ pub mod vga;
 use core::panic::PanicInfo;
 
 pub fn init() {
+    gdt::init();
     interrupts::init_idt();
 }
 
