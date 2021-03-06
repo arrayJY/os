@@ -112,7 +112,16 @@ impl Writer {
                     self.buffer.characters[i - 1][j].write(c);
                 }
             }
+            self.clear_line(BUFFER_HEIGHT - 1);
         }
+    }
+    fn clear_line(&mut self, line: usize) {
+        self.buffer.characters[line].iter_mut().for_each(|c| {
+            c.write(Char {
+                ascii: 0,
+                color_code: ColorCode::default(),
+            })
+        })
     }
 }
 
