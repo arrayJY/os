@@ -12,6 +12,7 @@ const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
 #[repr(u8)]
 pub enum Interrupt {
     Timer = PIC_1_OFFSET,
+    Keyborard,
 }
 
 impl Interrupt {
@@ -39,6 +40,7 @@ lazy_static! {
                 .set_stack_index(ISTIndex::DoubleFault.as_u16());
         }
         idt[Interrupt::Timer.as_usize()].set_handler_fn(timer_handler);
+        idt[Interrupt::Keyborard.as_usize()].set_handler_fn(keyboard_handler);
         idt
     };
 }
@@ -48,8 +50,33 @@ extern "x86-interrupt" fn breakpoint_handler(stack_frame: &mut InterruptStackFra
 }
 
 extern "x86-interrupt" fn timer_handler(_stack_frame: &mut InterruptStackFrame) {
-    print!("...............................");
+    // print!(".");
     Interrupt::Timer.end_of_interrupt();
+}
+extern "x86-interrupt" fn keyboard_handler(_stack_frame: &mut InterruptStackFrame) {
+    use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
+    use spin::Mutex;
+    use x86_64::instructions::port::Port;
+
+    lazy_static! {
+        static ref KEYBOARD: Mutex<Keyboard<layouts::Us104Key, ScancodeSet1>> = Mutex::new(
+            Keyboard::new(layouts::Us104Key, ScancodeSet1, HandleControl::Ignore) //Ignore control now.
+        );
+    };
+
+    let mut keyboard = KEYBOARD.lock();
+    let mut port = Port::new(0x60);
+    let code: u8 = unsafe { port.read() };
+    if let Ok(Some(key_event)) = keyboard.add_byte(code) {
+        if let Some(key) = keyboard.process_keyevent(key_event) {
+            match key {
+                DecodedKey::Unicode(ch) => print!("{}", ch),
+                DecodedKey::RawKey(key) => print!("{:?}", key),
+            }
+        }
+    }
+
+    Interrupt::Keyborard.end_of_interrupt();
 }
 
 #[allow(unused_variables)]
