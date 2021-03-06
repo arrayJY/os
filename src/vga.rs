@@ -155,24 +155,28 @@ macro_rules! println {
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
-    WRITER.lock().write_fmt(args).unwrap();
+    use x86_64::instructions::interrupts;
+    interrupts::without_interrupts(|| {
+        WRITER.lock().write_fmt(args).unwrap();
+    });
 }
 
 #[cfg(test)]
 use crate::{serial_print, serial_println};
 
 #[test_case]
-fn test_println_simple() {
-    serial_print!("test_println_many -> ");
-    println!("test_println_simple output");
-    serial_println!("[ok]");
-}
-
-#[test_case]
-fn test_println_many() {
-    serial_print!("test_println -> ");
-    for _ in 0..200 {
-        println!("test_println_simple output");
-    }
+fn test_println_output() {
+    use core::fmt::Write;
+    use x86_64::instructions::interrupts;
+    let s = "Some test string that fits on a single line";
+    serial_print!("test_println_output -> ");
+    interrupts::without_interrupts(|| {
+        let mut writer = WRITER.lock();
+        writeln!(writer, "{}", s).unwrap();
+        for (i, c) in s.chars().enumerate() {
+            let screen_char = writer.buffer.characters[0][i].read();
+            assert_eq!(char::from(screen_char.ascii), c);
+        }
+    });
     serial_println!("[ok]");
 }
