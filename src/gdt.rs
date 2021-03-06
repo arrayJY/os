@@ -15,11 +15,20 @@ pub struct Selectors {
     */
 }
 
+#[derive(Debug, Clone, Copy)]
 #[repr(u16)]
 pub enum ISTIndex {
     DoubleFault = 0,
 }
 
+impl ISTIndex {
+    pub fn as_u16(self) -> u16{
+        self as u16
+    }
+    pub fn as_usize(self) -> usize {
+        self as usize
+    }
+}
 lazy_static! {
     pub static ref GDT: (GlobalDescriptorTable, Selectors) = {
         let mut gdt = GlobalDescriptorTable::new();

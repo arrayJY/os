@@ -15,6 +15,8 @@ use core::panic::PanicInfo;
 pub fn init() {
     gdt::init();
     interrupts::init_idt();
+    interrupts::init_pic();
+    interrupts::enable();
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
