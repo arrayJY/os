@@ -2,13 +2,19 @@
 #![cfg_attr(test, no_main)]
 #![feature(exclusive_range_pattern)]
 #![feature(custom_test_frameworks)]
+#![feature(abi_x86_interrupt)]
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
+pub mod gdt;
+pub mod interrupts;
 pub mod serial;
 pub mod vga;
-pub mod gdt;
 
 use core::panic::PanicInfo;
+
+pub fn init() {
+    interrupts::init_idt();
+}
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(u32)]
@@ -44,8 +50,17 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
 #[cfg(test)]
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
+    init();
     test_main();
     loop {}
+}
+
+#[test_case]
+fn test_breakpoint_exception() {
+    // invoke a breakpoint exception
+    serial_print!("test_breakpoint_exception");
+    x86_64::instructions::interrupts::int3();
+    serial_println!(" -> [ok]");
 }
 
 #[cfg(test)]
