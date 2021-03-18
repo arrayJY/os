@@ -12,7 +12,7 @@ panic="abort"
 panic="abort"
 
 [dependencies]
-bootloader = "0.9.14"
+bootloader = { version = "0.9.14", features = ["map_physical_memory"]}
 x86_64 = "0.13.2"
 uart_16550 = "0.2.0"
 volatile = "0.4.3"

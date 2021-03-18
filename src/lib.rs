@@ -7,6 +7,7 @@
 #![reexport_test_harness_main = "test_main"]
 pub mod gdt;
 pub mod interrupts;
+pub mod memory;
 pub mod serial;
 pub mod vga;
 
@@ -19,7 +20,7 @@ pub fn init() {
     interrupts::enable();
 }
 
-pub fn hlt_loop() -> !{
+pub fn hlt_loop() -> ! {
     loop {
         x86_64::instructions::hlt();
     }
@@ -57,11 +58,18 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
 
 /// Entry point for `cargo xtest`
 #[cfg(test)]
-#[no_mangle]
-pub extern "C" fn _start() -> ! {
+use bootloader::{entry_point, BootInfo};
+
+#[cfg(test)]
+entry_point!(test_kernel_main);
+
+/// Entry point for `cargo test`
+#[cfg(test)]
+fn test_kernel_main(_boot_info: &'static BootInfo) -> ! {
+    // like before
     init();
     test_main();
-    loop {}
+    hlt_loop();
 }
 
 #[test_case]
