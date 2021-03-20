@@ -55,7 +55,6 @@ extern "x86-interrupt" fn timer_handler(_stack_frame: &mut InterruptStackFrame) 
 }
 extern "x86-interrupt" fn keyboard_handler(_stack_frame: &mut InterruptStackFrame) {
     use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
-    use spin::Mutex;
     use x86_64::instructions::port::Port;
 
     lazy_static! {
