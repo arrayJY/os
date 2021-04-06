@@ -69,9 +69,10 @@ entry_point!(test_kernel_main);
 
 /// Entry point for `cargo test`
 #[cfg(test)]
-fn test_kernel_main(_boot_info: &'static BootInfo) -> ! {
+fn test_kernel_main(boot_info: &'static BootInfo) -> ! {
     // like before
     init();
+    serial_println!("{:#?}", boot_info.memory_map);
     test_main();
     hlt_loop();
 }
