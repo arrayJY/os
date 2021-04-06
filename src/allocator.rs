@@ -25,7 +25,6 @@ unsafe impl GlobalAlloc for Stupid {
 
 pub fn heap_init(
     mapper: &mut OffsetPageTable,
-    frame_allocator: &mut impl FrameAllocator<Size4KiB>,
 ) -> Result<(), MapToError<Size4KiB>> {
     use x86_64::structures::paging::PageTableFlags;
     let page_range = {
@@ -36,12 +35,13 @@ pub fn heap_init(
         Page::range_inclusive(heap_start_page, heap_end_page)
     };
 
-    for page in page_range {
-        let frame = frame_allocator
+    use crate::memory::FRAME_ALLOCATOR;
+    for page in page_range{
+        let frame = FRAME_ALLOCATOR.lock()
             .allocate_frame()
             .ok_or(MapToError::FrameAllocationFailed)?;
         let flags = PageTableFlags::PRESENT | PageTableFlags::WRITABLE;
-        unsafe { mapper.map_to(page, frame, flags, frame_allocator)?.flush() };
+        unsafe { mapper.map_to(page, frame, flags, FRAME_ALLOCATOR.lock().get_mut())?.flush() };
     }
 
     unsafe { ALLOCATOR.lock().init(HEAP_START, HEAP_SIZE) }

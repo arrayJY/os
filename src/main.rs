@@ -6,7 +6,6 @@
 
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
-use alloc::vec::Vec;
 use os::{allocator::heap_init, memory};
 extern crate alloc;
 #[allow(unused_imports)]
@@ -19,9 +18,8 @@ fn kenerl_main(boot_info: &'static BootInfo) -> ! {
     os::init();
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);
     let mut mapper = unsafe { os::memory::init(phys_mem_offset) };
-    let mut frame_allocator = unsafe { memory::MemoryFrameAllocator::new(&boot_info.memory_map) };
-
-    heap_init(&mut mapper, &mut frame_allocator);
+    memory::init_frame_allocator(&boot_info.memory_map);
+    heap_init(&mut mapper).expect("Initalize heap failed.");
 
     #[cfg(test)]
     test_main();

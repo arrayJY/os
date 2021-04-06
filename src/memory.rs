@@ -1,3 +1,6 @@
+use alloc::boxed::Box;
+use lazy_static::lazy_static;
+use spin::Mutex;
 use x86_64::{
     structures::paging::{
         FrameAllocator, Mapper, OffsetPageTable, Page, PageTable, PhysFrame, Size4KiB,
@@ -6,9 +9,10 @@ use x86_64::{
 };
 
 use bootloader::bootinfo::{MemoryMap, MemoryRegionType};
+pub mod memory_set;
 
 pub struct MemoryFrameAllocator {
-    memory_map: &'static MemoryMap,
+    memory_map: Option<&'static MemoryMap>,
     next: usize,
 }
 
@@ -21,15 +25,22 @@ unsafe impl FrameAllocator<Size4KiB> for EmptyFrameAllocator {
 }
 
 impl MemoryFrameAllocator {
-    pub unsafe fn new(memory_map: &'static MemoryMap) -> Self {
+    pub fn new() -> Self {
         MemoryFrameAllocator {
-            memory_map,
+            memory_map: None,
             next: 0,
         }
+    }
+    pub fn get_mut(&mut self) -> &mut Self {
+        self
+    }
+    pub unsafe fn init(&mut self, memory_map: &'static MemoryMap) {
+        self.memory_map = Some(memory_map);
     }
 
     fn usable_frames(&self) -> impl Iterator<Item = PhysFrame> {
         self.memory_map
+            .expect("Frame allocator not initalized.")
             .iter()
             .filter(|r| r.region_type == MemoryRegionType::Usable)
             .map(|r| r.range.start_addr()..r.range.end_addr())
@@ -44,6 +55,19 @@ unsafe impl FrameAllocator<Size4KiB> for MemoryFrameAllocator {
         self.next += 1;
         frame
     }
+}
+lazy_static! {
+    pub static ref FRAME_ALLOCATOR: Mutex<MemoryFrameAllocator> =
+        Mutex::new(MemoryFrameAllocator::new());
+}
+
+//Must call after initalizing heap.
+pub unsafe fn empty_page_table() -> &'static mut PageTable {
+    Box::leak(Box::new(PageTable::new()))
+}
+
+pub fn init_frame_allocator(memory_map: &'static MemoryMap) {
+    unsafe { FRAME_ALLOCATOR.lock().init(memory_map) }
 }
 
 pub fn create_example_mapping(
