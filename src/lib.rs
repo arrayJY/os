@@ -3,6 +3,7 @@
 #![feature(exclusive_range_pattern)]
 #![feature(custom_test_frameworks)]
 #![feature(abi_x86_interrupt)]
+#![feature(asm)]
 #![feature(alloc_error_handler)]
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
@@ -12,9 +13,11 @@ pub mod interrupts;
 pub mod memory;
 pub mod serial;
 pub mod vga;
+pub mod system_call;
 
 extern crate alloc;
 
+pub use system_call::lib::*;
 use core::panic::PanicInfo;
 
 pub fn init() {
