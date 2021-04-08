@@ -14,7 +14,7 @@ impl SystemCall {
     }
 }
 
-pub fn syscall(syscall_id: usize, args: [usize; 3]) -> isize {
+pub fn sysexec(syscall_id: usize, args: [usize; 3]) -> isize {
     match syscall_id {
         1 => sys_write(args[0] as *const u8, args[1]),
         _ => panic!("Unsupported system call."),

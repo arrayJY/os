@@ -16,5 +16,5 @@ fn system_call(syscall_id: SystemCall, args: [usize; 3]) -> isize {
         asm!("mov rax, {}", in(reg) id, options(nostack));
         asm!("int 0x80");
     }
-    1
+    1 //TODO: Dealing with return value
 }

@@ -149,6 +149,7 @@ pub fn enable() {
     x86_64::instructions::interrupts::enable();
 }
 
+// TODO: Dealing with return value
 extern "x86-interrupt" fn trap_handler(_stack_frame: &mut InterruptStackFrame) {
     let mut syscall_id: usize;
     let mut arg1: usize;
@@ -160,5 +161,5 @@ extern "x86-interrupt" fn trap_handler(_stack_frame: &mut InterruptStackFrame) {
         asm!("mov {}, rsi", out(reg) arg2);
         asm!("mov {}, rdi", out(reg) arg1);
     }
-    crate::system_call::syscall(syscall_id, [arg1, arg2, arg3]);
+    crate::system_call::sysexec(syscall_id, [arg1, arg2, arg3]);
 }
