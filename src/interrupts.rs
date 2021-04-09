@@ -1,10 +1,12 @@
+pub mod exception_handlers;
 use crate::gdt::ISTIndex;
-use crate::{print, println};
+use crate::print;
+use exception_handlers::*;
 use lazy_static::lazy_static;
 use pic8259_simple::ChainedPics;
 use spin::Mutex;
 use x86_64::{
-    structures::idt::{InterruptDescriptorTable, InterruptStackFrame, PageFaultErrorCode},
+    structures::idt::{InterruptDescriptorTable, InterruptStackFrame},
     PrivilegeLevel,
 };
 
@@ -37,7 +39,26 @@ pub static PIC: Mutex<ChainedPics> =
 lazy_static! {
     static ref IDT: InterruptDescriptorTable = {
         let mut idt = InterruptDescriptorTable::new();
+        idt.divide_error.set_handler_fn(divide_error_handler);
+        unsafe {
+            idt.debug
+                .set_handler_fn(debug_handler)
+                .set_stack_index(ISTIndex::Debug.as_u16());
+            idt.non_maskable_interrupt
+                .set_handler_fn(non_maskable_interrupt_handler)
+                .set_stack_index(ISTIndex::NonMaskableInterrupt.as_u16());
+        };
         idt.breakpoint.set_handler_fn(breakpoint_handler);
+        idt.overflow.set_handler_fn(overflow_handler);
+        idt.bound_range_exceeded.set_handler_fn(bound_range_exceeded_handler);
+        idt.invalid_opcode.set_handler_fn(invalid_opcode_handler);
+        idt.device_not_available.set_handler_fn(device_not_available_handler);
+        unsafe {
+            idt.double_fault
+                .set_handler_fn(double_fault_handler)
+                .set_stack_index(ISTIndex::DoubleFault.as_u16());
+        }
+        idt.invalid_tss.set_handler_fn(invalid_tss_handler);
         idt.segment_not_present
             .set_handler_fn(segment_not_present_handler);
         idt.stack_segment_fault
@@ -45,11 +66,12 @@ lazy_static! {
         idt.general_protection_fault
             .set_handler_fn(general_protection_fault_handler);
         idt.page_fault.set_handler_fn(page_fault_handler);
-        unsafe {
-            idt.double_fault
-                .set_handler_fn(double_fault_handler)
-                .set_stack_index(ISTIndex::DoubleFault.as_u16());
-        }
+        idt.x87_floating_point.set_handler_fn(x87_floating_point_handler);
+        idt.alignment_check.set_handler_fn(alignment_check_handler);
+        idt.machine_check.set_handler_fn(machine_check_handler);
+        idt.simd_floating_point.set_handler_fn(simd_floating_point_handler);
+        idt.virtualization.set_handler_fn(virtualization_handler);
+        idt.security_exception.set_handler_fn(security_handler);
         idt[Interrupt::Timer.as_usize()].set_handler_fn(timer_handler);
         idt[Interrupt::Keyborard.as_usize()].set_handler_fn(keyboard_handler);
         //Trap
@@ -61,14 +83,11 @@ lazy_static! {
     };
 }
 
-extern "x86-interrupt" fn breakpoint_handler(stack_frame: &mut InterruptStackFrame) {
-    println!("EXCEPTION: Breakpoint\n{:#?}", stack_frame);
-}
-
 extern "x86-interrupt" fn timer_handler(_stack_frame: &mut InterruptStackFrame) {
     // print!(".");
     Interrupt::Timer.end_of_interrupt();
 }
+
 extern "x86-interrupt" fn keyboard_handler(_stack_frame: &mut InterruptStackFrame) {
     use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
     use x86_64::instructions::port::Port;
@@ -94,45 +113,19 @@ extern "x86-interrupt" fn keyboard_handler(_stack_frame: &mut InterruptStackFram
     Interrupt::Keyborard.end_of_interrupt();
 }
 
-#[allow(unused_variables)]
-extern "x86-interrupt" fn double_fault_handler(
-    stack_frame: &mut InterruptStackFrame,
-    _error_code: u64,
-) -> ! {
-    panic!("EXCEPTION: Double Fault\n{:#?}", stack_frame);
-}
-
-extern "x86-interrupt" fn segment_not_present_handler(
-    stack_frame: &mut InterruptStackFrame,
-    error_code: u64,
-) {
-    panic!(
-        "EXCEPTION: Segment not Present\n{:#?}\nErrorCode: 0x{:x}",
-        stack_frame, error_code
-    );
-}
-
-extern "x86-interrupt" fn stack_segment_fault_handler(
-    stack_frame: &mut InterruptStackFrame,
-    error_code: u64,
-) {
-    panic!(
-        "EXCEPTION: Stack Segment Fault\n{:#?}\nErrorCode: {:#?}",
-        stack_frame, error_code
-    );
-}
-
-extern "x86-interrupt" fn general_protection_fault_handler(
-    stack_frame: &mut InterruptStackFrame,
-    _error_code: u64,
-) {
-    panic!("EXCEPTION: General Protection Fault\n{:#?}", stack_frame);
-}
-extern "x86-interrupt" fn page_fault_handler(
-    stack_frame: &mut InterruptStackFrame,
-    _error_code: PageFaultErrorCode,
-) {
-    panic!("EXCEPTION: Page Fault\n{:#?}", stack_frame);
+// TODO: Dealing with return value
+extern "x86-interrupt" fn trap_handler(_stack_frame: &mut InterruptStackFrame) {
+    let mut syscall_id: usize;
+    let mut arg1: usize;
+    let mut arg2: usize;
+    let mut arg3: usize;
+    unsafe {
+        asm!("mov {}, rax", out(reg) syscall_id);
+        asm!("mov {}, rdx", out(reg) arg3);
+        asm!("mov {}, rsi", out(reg) arg2);
+        asm!("mov {}, rdi", out(reg) arg1);
+    }
+    crate::system_call::sysexec(syscall_id, [arg1, arg2, arg3]);
 }
 
 pub fn init_idt() {
@@ -147,19 +140,4 @@ pub fn init_pic() {
 
 pub fn enable() {
     x86_64::instructions::interrupts::enable();
-}
-
-// TODO: Dealing with return value
-extern "x86-interrupt" fn trap_handler(_stack_frame: &mut InterruptStackFrame) {
-    let mut syscall_id: usize;
-    let mut arg1: usize;
-    let mut arg2: usize;
-    let mut arg3: usize;
-    unsafe {
-        asm!("mov {}, rax", out(reg) syscall_id);
-        asm!("mov {}, rdx", out(reg) arg3);
-        asm!("mov {}, rsi", out(reg) arg2);
-        asm!("mov {}, rdi", out(reg) arg1);
-    }
-    crate::system_call::sysexec(syscall_id, [arg1, arg2, arg3]);
 }
