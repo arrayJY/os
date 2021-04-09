@@ -14,6 +14,7 @@ pub mod memory;
 pub mod serial;
 pub mod vga;
 pub mod system_call;
+pub mod exec;
 
 extern crate alloc;
 
