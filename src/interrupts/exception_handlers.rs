@@ -55,7 +55,7 @@ pub extern "x86-interrupt" fn machine_check_handler(stack_frame: &mut InterruptS
 
 pub extern "x86-interrupt" fn page_fault_handler(
     stack_frame: &mut InterruptStackFrame,
-    _error_code: PageFaultErrorCode,
+    error_code: PageFaultErrorCode,
 ) {
-    panic!("EXCEPTION: Page Fault\n{:#?}", stack_frame);
+    panic!("EXCEPTION: Page Fault\n{:#?}\nErrorCode: {:#?}", stack_frame, error_code);
 }
