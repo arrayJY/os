@@ -4,22 +4,23 @@
 #![feature(custom_test_frameworks)]
 #![feature(abi_x86_interrupt)]
 #![feature(asm)]
+#![feature(naked_functions)]
 #![feature(alloc_error_handler)]
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 pub mod allocator;
+pub mod exec;
 pub mod gdt;
 pub mod interrupts;
 pub mod memory;
 pub mod serial;
-pub mod vga;
 pub mod system_call;
-pub mod exec;
+pub mod vga;
 
 extern crate alloc;
 
-pub use system_call::lib::*;
 use core::panic::PanicInfo;
+pub use system_call::lib::*;
 
 pub fn init() {
     gdt::init();
@@ -71,7 +72,7 @@ use bootloader::{entry_point, BootInfo};
 #[cfg(test)]
 entry_point!(test_kernel_main);
 
-/// Entry point for `cargo test`
+// Entry point for `cargo test`
 #[cfg(test)]
 fn test_kernel_main(boot_info: &'static BootInfo) -> ! {
     // like before

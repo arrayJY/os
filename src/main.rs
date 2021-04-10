@@ -20,7 +20,6 @@ fn kenerl_main(boot_info: &'static BootInfo) -> ! {
     let mut mapper = unsafe { os::memory::init(phys_mem_offset) };
     memory::init_frame_allocator(&boot_info.memory_map);
     heap_init(&mut mapper).expect("Initalize heap failed.");
-    os::exec::user_init(&mut mapper);
 
     #[cfg(test)]
     test_main();
