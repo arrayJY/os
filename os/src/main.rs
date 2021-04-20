@@ -3,6 +3,7 @@
 #![feature(custom_test_frameworks)]
 #![test_runner(os::test_runner)]
 #![reexport_test_harness_main = "test_main"]
+#![feature(global_asm)]
 
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
@@ -11,6 +12,8 @@ extern crate alloc;
 #[allow(unused_imports)]
 use os::println;
 use x86_64::VirtAddr;
+
+global_asm!(include_str!("link_app.S"));
 
 entry_point!(kenerl_main);
 
