@@ -7,7 +7,7 @@
 
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
-use os::{allocator::heap_init, memory};
+use os::{allocator::heap_init, loader::get_num_app, memory};
 extern crate alloc;
 #[allow(unused_imports)]
 use os::println;
