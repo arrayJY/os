@@ -1,0 +1,8 @@
+[build]
+target = "x86_64-os.json"
+
+[target.'cfg(target_os = "none")']
+rustflags = [
+    "-Clink-args=-Tsrc/linker.ld",
+]
+
