@@ -20,6 +20,7 @@ volatile = "0.4.3"
 spin = "0.7.1"
 pic8259_simple = "0.2.0"
 pc-keyboard = "0.5.1"
+xmas-elf = "0.7.0"
 
 [dependencies.lazy_static]
 lazy_static = "1.4.0"

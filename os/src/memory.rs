@@ -59,6 +59,11 @@ unsafe impl FrameAllocator<Size4KiB> for MemoryFrameAllocator {
 lazy_static! {
     pub static ref FRAME_ALLOCATOR: Mutex<MemoryFrameAllocator> =
         Mutex::new(MemoryFrameAllocator::new());
+    static ref PHSYICAL_MEMORY_OFFSET: Mutex<u64> = Mutex::new(0);
+}
+
+pub fn phsyical_memory_offset() -> u64 {
+    *PHSYICAL_MEMORY_OFFSET.lock()
 }
 
 //Must call after initalizing heap.
@@ -70,7 +75,7 @@ pub fn init_frame_allocator(memory_map: &'static MemoryMap) {
     unsafe { FRAME_ALLOCATOR.lock().init(memory_map) }
 }
 
-pub fn alloc_frame() -> Option<PhysFrame>{
+pub fn alloc_frame() -> Option<PhysFrame> {
     FRAME_ALLOCATOR.lock().allocate_frame()
 }
 
@@ -87,6 +92,7 @@ pub fn create_example_mapping(
 }
 
 pub unsafe fn init(physical_memory_offset: VirtAddr) -> OffsetPageTable<'static> {
+    *PHSYICAL_MEMORY_OFFSET.lock() = physical_memory_offset.as_u64();
     let lv4_table = active_level_4_table(physical_memory_offset);
     OffsetPageTable::new(lv4_table, physical_memory_offset)
 }
