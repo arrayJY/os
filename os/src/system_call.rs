@@ -1,22 +1,18 @@
 pub mod lib;
 
-#[repr(usize)]
-pub enum SystemCall {
-    SysWrite = 1,
-}
+use crate::task::{TaskStatus, TASK_MANAGER};
+use alloc::vec::Vec;
+use x86_64::{
+    structures::paging::{mapper::TranslateResult, OffsetPageTable, Translate},
+    VirtAddr,
+};
 
-impl SystemCall {
-    pub fn as_u64(self) -> u64 {
-        self as u64
-    }
-    pub fn as_usize(self) -> usize {
-        self as usize
-    }
-}
+use crate::memory::{phsyical_memory_offset, PAGE_SIZE};
 
 pub fn sysexec(syscall_id: usize, args: [usize; 3]) -> isize {
     match syscall_id {
         1 => sys_write(args[0] as *const u8, args[1]),
+        2 => sys_exit(args[0] as isize),
         _ => panic!("Unsupported system call."),
     }
 }
@@ -27,4 +23,13 @@ pub fn sys_write(buffer: *const u8, len: usize) -> isize {
     let str = core::str::from_utf8(slice).unwrap();
     print!("{}", str);
     len as isize
+}
+
+pub fn sys_exit(exit_code: isize) -> isize {
+    use crate::println;
+    let mut task_manager = TASK_MANAGER.lock();
+    println!("Task {} exited with return code {}.", task_manager.current_task, exit_code);
+    let task = task_manager.current_task_mut();
+    task.task_status = TaskStatus::Stop;
+    0
 }

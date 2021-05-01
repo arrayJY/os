@@ -56,6 +56,8 @@ unsafe impl FrameAllocator<Size4KiB> for MemoryFrameAllocator {
         frame
     }
 }
+
+pub static PAGE_SIZE: usize = 4096; //4KiB
 lazy_static! {
     pub static ref FRAME_ALLOCATOR: Mutex<MemoryFrameAllocator> =
         Mutex::new(MemoryFrameAllocator::new());

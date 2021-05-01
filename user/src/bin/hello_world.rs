@@ -3,9 +3,10 @@
 
 #[macro_use]
 extern crate user_lib;
+use user_lib::write;
 
 #[no_mangle]
 unsafe fn main() -> i32 {
-    println!("Hello World!");
+    write("Hello World!\n".as_bytes());
     0
 }

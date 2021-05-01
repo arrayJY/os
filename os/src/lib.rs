@@ -5,6 +5,7 @@
 #![feature(abi_x86_interrupt)]
 #![feature(asm)]
 #![feature(naked_functions)]
+#![feature(global_asm)]
 #![feature(alloc_error_handler)]
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
@@ -17,6 +18,7 @@ pub mod serial;
 pub mod system_call;
 pub mod vga;
 pub mod loader;
+pub mod task;
 
 extern crate alloc;
 
@@ -69,6 +71,9 @@ pub fn test_panic_handler(info: &PanicInfo) -> ! {
 /// Entry point for `cargo xtest`
 #[cfg(test)]
 use bootloader::{entry_point, BootInfo};
+
+#[cfg(test)]
+global_asm!(include_str!("link_app.S"));
 
 #[cfg(test)]
 entry_point!(test_kernel_main);
