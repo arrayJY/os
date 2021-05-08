@@ -1,13 +1,10 @@
-pub mod lib;
-
-use crate::task::{TaskStatus, TASK_MANAGER};
-use alloc::vec::Vec;
+use crate::task::{TASK_MANAGER, TaskStatus, stop_current_and_run_next};
 use x86_64::{
     structures::paging::{mapper::TranslateResult, OffsetPageTable, Translate},
     VirtAddr,
 };
 
-use crate::memory::{phsyical_memory_offset, PAGE_SIZE};
+use crate::memory::{physical_memory_offset, PAGE_SIZE};
 
 pub fn sysexec(syscall_id: usize, args: [usize; 3]) -> isize {
     match syscall_id {
@@ -25,11 +22,12 @@ pub fn sys_write(buffer: *const u8, len: usize) -> isize {
     len as isize
 }
 
-pub fn sys_exit(exit_code: isize) -> isize {
+pub fn sys_exit(exit_code: isize) -> ! {
     use crate::println;
-    let mut task_manager = TASK_MANAGER.lock();
-    println!("Task {} exited with return code {}.", task_manager.current_task, exit_code);
-    let task = task_manager.current_task_mut();
-    task.task_status = TaskStatus::Stop;
-    0
+    println!(
+        "[kernel] Task exited with return code {}.",
+        exit_code
+    );
+    stop_current_and_run_next();
+    panic!("sys_exit never returns!");
 }

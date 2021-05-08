@@ -23,7 +23,6 @@ pub mod task;
 extern crate alloc;
 
 use core::panic::PanicInfo;
-pub use system_call::lib::*;
 
 pub fn init() {
     gdt::init();

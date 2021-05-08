@@ -30,7 +30,7 @@ fn kenerl_main(boot_info: &'static BootInfo) -> ! {
 
     println!("----------");
     println!("[user programs]\n");
-    user_init(&mapper);
+    user_init();
 
     #[cfg(test)]
     test_main();

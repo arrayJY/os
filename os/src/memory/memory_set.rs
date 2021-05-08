@@ -9,7 +9,7 @@ use x86_64::{
 };
 
 use super::{active_level_4_table, empty_page_table};
-use crate::memory::{PAGE_SIZE, phsyical_memory_offset};
+use crate::memory::{physical_memory_offset, PAGE_SIZE};
 
 pub const KERNEL_START: usize = 0x0;
 pub const USER_START: usize = 0x8000000;
@@ -45,7 +45,7 @@ impl MapArea {
 
     pub fn copy_data(&mut self, page_table: &mut OffsetPageTable, data: &[u8]) {
         let len = data.len();
-        let physical_memory_offset = phsyical_memory_offset();
+        let physical_memory_offset = physical_memory_offset();
         let mut start_virt = self.start_virt_addr;
         let end_virtual = self.end_virt_addr;
         for page in self.page_range {
@@ -89,7 +89,7 @@ pub struct MemorySet {
 
 impl MemorySet {
     pub fn new() -> Self {
-        let physical_memory_offset = VirtAddr::new(phsyical_memory_offset());
+        let physical_memory_offset = VirtAddr::new(physical_memory_offset());
         Self {
             page_table: unsafe {
                 OffsetPageTable::new(
@@ -116,43 +116,14 @@ impl MemorySet {
     ) {
         self.push(MapArea::new(start_virt_addr, end_virt_addr, flags), data)
     }
-    /*
-    pub fn map_kernel_space(&mut self, translator: &OffsetPageTable, memory_offset: u64) {
-        let kernel_space = Page::<Size4KiB>::range(
-            Page::from_start_address(VirtAddr::new(KERNEL_START as u64)).unwrap(),
-            Page::from_start_address(VirtAddr::new(USER_START as u64)).unwrap(),
-        );
-        let offset_kernel_space = Page::<Size4KiB>::range(
-            Page::from_start_address(VirtAddr::new(KERNEL_START as u64 + memory_offset)).unwrap(),
-            Page::from_start_address(VirtAddr::new(USER_START as u64 + memory_offset)).unwrap(),
-        );
-        use crate::memory::FRAME_ALLOCATOR;
-        let flags = PageTableFlags::PRESENT | PageTableFlags::WRITABLE;
-        let mut frame_allocator = FRAME_ALLOCATOR.lock();
-        let frame_allocator = frame_allocator.get_mut();
-        let page_table = &mut self.page_table;
-        for page in kernel_space {
-            if let Ok(frame) = translator.translate_page(page) {
-                unsafe {
-                    page_table
-                        .map_to(page, frame, flags, frame_allocator)
-                        .expect("map_to failed.")
-                        .flush()
-                }
-            }
-        }
-        for page in offset_kernel_space {
-            if let Ok(frame) = translator.translate_page(page) {
-                unsafe {
-                    page_table
-                        .map_to(page, frame, flags, frame_allocator)
-                        .expect("map_to failed.")
-                        .flush()
-                }
-            }
-        }
+    pub fn page_table_address(&mut self, translator: &OffsetPageTable) -> usize {
+        use x86_64::structures::paging::PageTable;
+        let lv4_table: *const PageTable = self.page_table.level_4_table();
+        let page_table_phsy_addr = translator
+            .translate_addr(VirtAddr::new(lv4_table as u64))
+            .unwrap();
+        page_table_phsy_addr.as_u64() as usize
     }
-    */
 }
 impl MemorySet {
     pub fn from_elf(elf_data: &[u8]) -> (Self, usize, usize) {

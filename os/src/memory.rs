@@ -64,7 +64,7 @@ lazy_static! {
     static ref PHSYICAL_MEMORY_OFFSET: Mutex<u64> = Mutex::new(0);
 }
 
-pub fn phsyical_memory_offset() -> u64 {
+pub fn physical_memory_offset() -> u64 {
     *PHSYICAL_MEMORY_OFFSET.lock()
 }
 
