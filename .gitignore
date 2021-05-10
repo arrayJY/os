@@ -1,4 +1,5 @@
 os/target
 os/src/link_app.S
+os/.idea
 user/target
 .vscode

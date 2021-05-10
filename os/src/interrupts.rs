@@ -75,10 +75,12 @@ lazy_static! {
         idt[Interrupt::Timer.as_usize()].set_handler_fn(timer_handler);
         idt[Interrupt::Keyborard.as_usize()].set_handler_fn(keyboard_handler);
         //Trap
+        /*
         idt[Interrupt::Trap.as_usize()]
             .set_handler_fn(trap_handler)
             .set_privilege_level(PrivilegeLevel::Ring3)
             .disable_interrupts(false);
+            */
         idt
     };
 }
@@ -113,6 +115,7 @@ extern "x86-interrupt" fn keyboard_handler(_stack_frame: &mut InterruptStackFram
     Interrupt::Keyborard.end_of_interrupt();
 }
 
+/*
 // TODO: Dealing with return value
 extern "x86-interrupt" fn trap_handler(_stack_frame: &mut InterruptStackFrame) {
     let mut syscall_id: usize;
@@ -127,6 +130,7 @@ extern "x86-interrupt" fn trap_handler(_stack_frame: &mut InterruptStackFrame) {
     }
     crate::system_call::sysexec(syscall_id, [arg1, arg2, arg3]);
 }
+*/
 
 pub fn init_idt() {
     IDT.load();

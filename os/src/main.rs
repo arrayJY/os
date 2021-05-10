@@ -27,6 +27,7 @@ fn kenerl_main(boot_info: &'static BootInfo) -> ! {
     println!("[kernel] Frame allocator initialized.");
     heap_init(&mut mapper).expect("Initalize heap failed.");
     println!("[kernel] Heap initialized.");
+    os::system_call::trap_init();
 
     println!("----------");
     println!("[user programs]\n");
