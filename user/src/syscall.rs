@@ -33,6 +33,30 @@ pub fn write(buffer: &[u8]) -> isize {
     unsafe { system_call(SystemCall::SysWrite, args) }
 }
 
+global_asm!("\
+.globl system_call
+system_call:
+    pushq %rax
+    movq %rdi, %rax
+    movq %rcx, %rdi
+    movq %rsi, %rsi
+    popq %rdx
+    leaq 0x2(%rip), %rcx
+    syscall
+    retq
+");
+
+/*
+    movl (%rsp), %ecx
+    addq $0x4, %rsp
+    movl %ecx, (%rsp)
+*/
+
+extern {
+    fn system_call(syscall_id: SystemCall, args: [usize; 3]) -> isize;
+}
+
+/*
 unsafe extern "C" fn system_call(syscall_id: SystemCall, args: [usize; 3]) -> isize {
     let id = syscall_id.as_usize();
     let mut ret;
@@ -47,3 +71,4 @@ unsafe extern "C" fn system_call(syscall_id: SystemCall, args: [usize; 3]) -> is
     }
     ret
 }
+ */

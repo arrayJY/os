@@ -79,8 +79,7 @@ extern "C" fn trap_handler() {
 fn trap_handler() {
     unsafe {
         asm!(
-            "sub rsp, 0x28",
-            "mov [rsp+0x20], rcx",  // Save user rip
+            "sub rsp, 0x20",
             "mov [rsp+0x18], rcx",  // Save user rip
             "mov [rsp+0x10], rdx",  // 3th arg
             "mov [rsp+0x8], rsi",   // 2rd arg
@@ -93,9 +92,9 @@ fn trap_handler() {
             "call {}", in (reg) syscall as u64
         );
         asm!(
-            "add rsp, 0x18",
-            "pop rcx",
-            "sysret"
+            "mov rcx, [rsp+0x18]",
+            "add rsp, 0x20",
+            "sysretq"
         );
     }
 }

@@ -2,6 +2,7 @@
 #![feature(linkage)]
 #![no_std]
 #![feature(panic_info_message)]
+#![feature(global_asm)]
 mod syscall;
 pub mod console;
 
