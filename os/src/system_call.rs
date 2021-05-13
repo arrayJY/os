@@ -57,44 +57,48 @@ pub fn trap_init() {
     };
 }
 
-/*
-#[naked]
-extern "C" fn trap_handler() {
-    asm!(
-            "push r11",
-            "push r10",
-            "push r9",
-            "push r8",
-            "push rdi",
-            "push rsi",
-            "push rdx",
-            "push rcx",
-            "push rax",
-            "sub rsp, 0x40"
-    )
 
-}
-*/
 #[naked]
 fn trap_handler() {
+    use crate::gdt::TSS;
     unsafe {
         asm!(
-            "sub rsp, 0x20",
-            "mov [rsp+0x18], rcx",  // Save user rip
-            "mov [rsp+0x10], rdx",  // 3th arg
-            "mov [rsp+0x8], rsi",   // 2rd arg
-            "mov [rsp], rdi",       // 1st arg
-            "mov rdi, rax",         // system call id
-            "mov rsi, rsp",
+        "sub rsp, 0x48",
+        "mov [rsp+0x40], rsp",  // stack pointer
+        "mov [rsp+0x38], rcx",  // save user rip
+        "mov [rsp+0x30], rdx",  // 3th arg
+        "mov [rsp+0x28], rsi",  // 2rd arg
+        "mov [rsp+0x20], rdi",  // 1st arg
+        "mov [rsp+0x18], rax",  // system call id
+        "mov rbx, rsp",
+        );
+        asm!(
+        "mov rsp, {}",
+        "mov rax, [rbx+0x40]",
+        "push rax", // stack pointer
+        "mov rax, [rbx+0x38]",
+        "push rax", // user rip
+        "mov rax, [rbx+0x30]",
+        "push rax", // 3th arg
+        "mov rax, [rbx+0x28]",
+        "push rax", // 2rd arg
+        "mov rax, [rbx+0x20]",
+        "push rax", // 1st arg
+        "mov rdi, [rbx+0x18]",
+        "mov rsi, rsp", // system call id
+        in(reg) (*TSS).interrupt_stack_table[0].as_u64()
         );
         //Call syscall
         asm!(
-            "call {}", in (reg) syscall as u64
+        "call {}", in (reg) syscall as u64
         );
         asm!(
-            "mov rcx, [rsp+0x18]",
-            "add rsp, 0x20",
-            "sysretq"
+        "mov rcx, [rsp+0x18]",
+        "mov rbx, [rsp+0x20]",
+        "add rsp, 0x20",
+        "mov rsp, rbx",
+        "add rsp, 0x48",
+        "sysretq"
         );
     }
 }
