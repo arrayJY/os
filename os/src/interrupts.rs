@@ -17,7 +17,7 @@ const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
 #[repr(u8)]
 pub enum Interrupt {
     Timer = PIC_1_OFFSET,
-    Keyborard,
+    Keyboard,
     Trap = 0x80,
 }
 
@@ -73,14 +73,7 @@ lazy_static! {
         idt.virtualization.set_handler_fn(virtualization_handler);
         idt.security_exception.set_handler_fn(security_handler);
         idt[Interrupt::Timer.as_usize()].set_handler_fn(timer_handler);
-        idt[Interrupt::Keyborard.as_usize()].set_handler_fn(keyboard_handler);
-        //Trap
-        /*
-        idt[Interrupt::Trap.as_usize()]
-            .set_handler_fn(trap_handler)
-            .set_privilege_level(PrivilegeLevel::Ring3)
-            .disable_interrupts(false);
-            */
+        idt[Interrupt::Keyboard.as_usize()].set_handler_fn(keyboard_handler);
         idt
     };
 }
@@ -112,25 +105,8 @@ extern "x86-interrupt" fn keyboard_handler(_stack_frame: &mut InterruptStackFram
         }
     }
 
-    Interrupt::Keyborard.end_of_interrupt();
+    Interrupt::Keyboard.end_of_interrupt();
 }
-
-/*
-// TODO: Dealing with return value
-extern "x86-interrupt" fn trap_handler(_stack_frame: &mut InterruptStackFrame) {
-    let mut syscall_id: usize;
-    let mut arg1: usize;
-    let mut arg2: usize;
-    let mut arg3: usize;
-    unsafe {
-        asm!("mov {}, rax", out(reg) syscall_id);
-        asm!("mov {}, rdx", out(reg) arg3);
-        asm!("mov {}, rsi", out(reg) arg2);
-        asm!("mov {}, rdi", out(reg) arg1);
-    }
-    crate::system_call::sysexec(syscall_id, [arg1, arg2, arg3]);
-}
-*/
 
 pub fn init_idt() {
     IDT.load();

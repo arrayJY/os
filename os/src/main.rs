@@ -15,9 +15,9 @@ use os::println;
 use x86_64::{structures::paging::Translate, VirtAddr};
 global_asm!(include_str!("link_app.S"));
 
-entry_point!(kenerl_main);
+entry_point!(kernel_main);
 
-fn kenerl_main(boot_info: &'static BootInfo) -> ! {
+fn kernel_main(boot_info: &'static BootInfo) -> ! {
     os::init();
     println!("[kernel] Kernel initialized.");
     let phys_mem_offset = VirtAddr::new(boot_info.physical_memory_offset);

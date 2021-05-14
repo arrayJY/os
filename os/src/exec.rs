@@ -8,10 +8,10 @@ use crate::task::{run_first, Task};
 
 pub fn task_page_table_address(current_page_table: &OffsetPageTable, task: &mut Task) -> usize {
     let lv4_table: *const PageTable = task.memory_set.page_table.level_4_table();
-    let page_table_phsy_addr = current_page_table
+    let page_table_phys_addr = current_page_table
         .translate_addr(VirtAddr::new(lv4_table as u64))
         .unwrap();
-    page_table_phsy_addr.as_u64() as usize
+    page_table_phys_addr.as_u64() as usize
 }
 
 pub fn user_init() {

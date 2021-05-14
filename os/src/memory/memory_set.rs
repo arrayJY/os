@@ -14,10 +14,6 @@ use crate::memory::{physical_memory_offset, PAGE_SIZE};
 pub const KERNEL_START: usize = 0x0;
 pub const USER_START: usize = 0x8000000;
 pub const USER_STACK_SIZE: usize = 1024 * 1024; //1MB
-pub struct VirtAddrRange {
-    pub strat: VirtAddr,
-    pub end: VirtAddr,
-}
 
 pub struct MapArea {
     page_range: PageRangeInclusive,
@@ -119,10 +115,10 @@ impl MemorySet {
     pub fn page_table_address(&mut self, translator: &OffsetPageTable) -> usize {
         use x86_64::structures::paging::PageTable;
         let lv4_table: *const PageTable = self.page_table.level_4_table();
-        let page_table_phsy_addr = translator
+        let page_table_phys_addr = translator
             .translate_addr(VirtAddr::new(lv4_table as u64))
             .unwrap();
-        page_table_phsy_addr.as_u64() as usize
+        page_table_phys_addr.as_u64() as usize
     }
 }
 impl MemorySet {

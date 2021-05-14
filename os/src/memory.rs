@@ -41,7 +41,7 @@ impl MemoryFrameAllocator {
 
     fn usable_frames(&self) -> impl Iterator<Item=PhysFrame> {
         self.memory_map
-            .expect("Frame allocator not initalized.")
+            .expect("Frame allocator not initialized.")
             .iter()
             .filter(|r| r.region_type == MemoryRegionType::Usable)
             .map(|r| r.range.start_addr()..r.range.end_addr())
@@ -69,7 +69,7 @@ pub fn physical_memory_offset() -> u64 {
     *PHSYICAL_MEMORY_OFFSET.lock()
 }
 
-//Must call after initalizing heap.
+//Must call after initializing heap.
 pub unsafe fn empty_page_table() -> &'static mut PageTable {
     Box::leak(Box::new(PageTable::new()))
 }
