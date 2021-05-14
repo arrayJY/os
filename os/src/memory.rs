@@ -10,6 +10,7 @@ use x86_64::{
 
 use bootloader::bootinfo::{MemoryMap, MemoryRegionType};
 use x86_64::structures::paging::PageTableFlags;
+
 pub mod memory_set;
 
 pub struct MemoryFrameAllocator {
@@ -113,6 +114,7 @@ pub unsafe fn active_level_4_table(physical_memory_offset: VirtAddr) -> &'static
 pub const KERNEL_STACK_START: u64 = 0x4000000;
 pub const KERNEL_STACK_END: u64 = 0x4100000;
 pub const KERNEL_STACK_SIZE: u64 = PAGE_SIZE as u64;
+pub const GUARD_SIZE: u64 = PAGE_SIZE as u64;
 
 pub fn init_kernel_stack(mapper: &mut OffsetPageTable) {
     let flags = PageTableFlags::PRESENT | PageTableFlags::WRITABLE;
@@ -120,11 +122,11 @@ pub fn init_kernel_stack(mapper: &mut OffsetPageTable) {
     let allocator = allocator.get_mut();
     //Left one page between each stack as guard.
     for start in (KERNEL_STACK_START..KERNEL_STACK_END)
-        .step_by(KERNEL_STACK_SIZE as usize + PAGE_SIZE)
+        .step_by((KERNEL_STACK_SIZE + GUARD_SIZE) as usize)
     {
         let page_range = Page::<Size4KiB>::range(
-            Page::containing_address(VirtAddr::new(start)),
             Page::containing_address(VirtAddr::new(start + KERNEL_STACK_SIZE)),
+            Page::containing_address(VirtAddr::new(start + 2 * KERNEL_STACK_SIZE)),
         );
         for page in page_range {
             let frame = allocator.allocate_frame().unwrap();
@@ -133,16 +135,9 @@ pub fn init_kernel_stack(mapper: &mut OffsetPageTable) {
                 .flush();
         }
     }
-    let page_range = Page::<Size4KiB>::range(
-        Page::containing_address(VirtAddr::new(KERNEL_STACK_START)),
-        Page::containing_address(VirtAddr::new(KERNEL_STACK_END)),
-    );
-    for page in page_range {
-        crate::println!("{:?} -> {:?}", page, mapper.translate_page(page));
-    }
 }
 
 #[inline]
 pub fn get_app_kernel_stack(app_id: u64) -> u64 {
-    KERNEL_STACK_START + (app_id + 1) * KERNEL_STACK_SIZE
+    KERNEL_STACK_START + (app_id + 1) * (2 * KERNEL_STACK_SIZE)
 }
