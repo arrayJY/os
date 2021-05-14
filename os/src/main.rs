@@ -23,7 +23,7 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     let mut mapper = unsafe { os::memory::init(phys_mem_offset) };
     memory::init_frame_allocator(&boot_info.memory_map);
     println!("[kernel] Frame allocator initialized.");
-    heap_init(&mut mapper).expect("Initalize heap failed.");
+    heap_init(&mut mapper).expect("Initialize heap failed.");
     println!("[kernel] Heap initialized.");
     memory::init_kernel_stack(&mut mapper);
     println!("[kernel] Kernel stack initialized.");

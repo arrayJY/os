@@ -85,6 +85,7 @@ impl TaskManager {
     fn stop_current(&self) {
         let mut inner = self.inner.borrow_mut();
         inner.current_task_mut().task_status = TaskStatus::Stop;
+        inner.current_task_mut().memory_set.remove_all_areas();
     }
     fn find_next_task(&self) -> Option<usize> {
         let inner = self.inner.borrow();

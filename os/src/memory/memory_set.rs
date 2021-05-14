@@ -38,6 +38,12 @@ impl MapArea {
         }
     }
 
+    pub fn unmap(&mut self, page_table: &mut OffsetPageTable) {
+        for page in self.page_range {
+            page_table.unmap(page);
+        }
+    }
+
     pub fn copy_data(&mut self, page_table: &mut OffsetPageTable, data: &[u8]) {
         let len = data.len();
         let physical_memory_offset = physical_memory_offset();
@@ -66,7 +72,7 @@ impl MapArea {
         use crate::memory::alloc_frame;
         use crate::memory::FRAME_ALLOCATOR;
         if let Err(x86_64::structures::paging::mapper::TranslateError::PageNotMapped) =
-            page_table.translate_page(page)
+        page_table.translate_page(page)
         {
             let frame = alloc_frame().unwrap();
             let map_result = unsafe {
@@ -102,6 +108,7 @@ impl MemorySet {
         }
         self.areas.push(map_area);
     }
+
     pub fn insert(
         &mut self,
         start_virt_addr: VirtAddr,
@@ -111,6 +118,7 @@ impl MemorySet {
     ) {
         self.push(MapArea::new(start_virt_addr, end_virt_addr, flags), data)
     }
+
     pub fn page_table_address(&mut self, translator: &OffsetPageTable) -> usize {
         use x86_64::structures::paging::PageTable;
         let lv4_table: *const PageTable = self.page_table.level_4_table();
@@ -119,7 +127,23 @@ impl MemorySet {
             .unwrap();
         page_table_phys_addr.as_u64() as usize
     }
+
+    pub fn remove_all_areas(&mut self) {
+        let page_table = &mut self.page_table;
+        self.areas.iter_mut().rev().for_each(
+            |area| area.unmap(page_table)
+        );
+        self.areas.clear();
+    }
+    pub fn remove_area_with_start_addr(&mut self, start_addr: VirtAddr) {
+        if let Some((i, area)) = self.areas.iter_mut().enumerate()
+            .find(|(i, area)| area.page_range.start.start_address() == start_addr) {
+            area.unmap(&mut self.page_table);
+            self.areas.remove(i);
+        }
+    }
 }
+
 impl MemorySet {
     pub fn from_elf(elf_data: &[u8]) -> (Self, usize, usize) {
         let mut memory_set = Self::new();
