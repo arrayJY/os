@@ -1,11 +1,10 @@
-use crate::task::{stop_current_and_run_next, TaskStatus, TASK_MANAGER};
 use x86_64::{
     registers,
     structures::paging::{mapper::TranslateResult, OffsetPageTable, Translate},
     VirtAddr,
 };
 
-use crate::memory::{physical_memory_offset, PAGE_SIZE};
+use crate::memory::{physical_memory_offset, PAGE_SIZE, get_app_kernel_stack};
 
 pub fn syscall(syscall_id: usize, args: [usize; 3]) -> isize {
     match syscall_id {
@@ -13,21 +12,6 @@ pub fn syscall(syscall_id: usize, args: [usize; 3]) -> isize {
         2 => sys_exit(args[0] as isize),
         _ => panic!("Unsupported system call."),
     }
-}
-
-pub fn sys_write(buffer: *const u8, len: usize) -> isize {
-    use crate::print;
-    let slice = unsafe { core::slice::from_raw_parts(buffer, len) };
-    let str = core::str::from_utf8(slice).unwrap();
-    print!("{}", str);
-    len as isize
-}
-
-pub fn sys_exit(exit_code: isize) -> ! {
-    use crate::println;
-    println!("[kernel] Task exited with return code {}.", exit_code);
-    stop_current_and_run_next();
-    panic!("sys_exit never returns!");
 }
 
 pub fn trap_init() {
@@ -60,7 +44,7 @@ pub fn trap_init() {
 
 #[naked]
 fn trap_handler() {
-    use crate::gdt::TSS;
+    use crate::task::TASK_MANAGER;
     unsafe {
         asm!(
         "sub rsp, 0x48",
@@ -86,7 +70,7 @@ fn trap_handler() {
         "push rax", // 1st arg
         "mov rdi, [rbx+0x18]",
         "mov rsi, rsp", // system call id
-        in(reg) (*TSS).interrupt_stack_table[0].as_u64()
+        in(reg) TASK_MANAGER.current_task_kernel_stack()
         );
         //Call syscall
         asm!(

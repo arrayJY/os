@@ -7,6 +7,7 @@ use x86_64::VirtAddr;
 
 use crate::{loader::*, memory::memory_set::MemorySet};
 use alloc::vec::Vec;
+use crate::memory::get_app_kernel_stack;
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -105,6 +106,10 @@ impl TaskManager {
         } else {
             panic!("All applications completed!");
         }
+    }
+
+    pub fn current_task_kernel_stack(&self) -> u64 {
+        get_app_kernel_stack(self.inner.borrow().current_task as u64)
     }
 }
 

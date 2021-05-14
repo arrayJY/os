@@ -8,12 +8,11 @@
 use alloc::task;
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
-use os::{allocator::heap_init, exec::user_init, loader, memory, task::TASK_MANAGER};
+use os::{allocator::heap_init, exec::user_init, memory, system_call};
 extern crate alloc;
 #[allow(unused_imports)]
 use os::println;
 use x86_64::{structures::paging::Translate, VirtAddr};
-
 global_asm!(include_str!("link_app.S"));
 
 entry_point!(kenerl_main);
@@ -27,10 +26,12 @@ fn kenerl_main(boot_info: &'static BootInfo) -> ! {
     println!("[kernel] Frame allocator initialized.");
     heap_init(&mut mapper).expect("Initalize heap failed.");
     println!("[kernel] Heap initialized.");
-    os::system_call::trap_init();
+    memory::init_kernel_stack(&mut mapper);
+    println!("[kernel] Kernel stack initialized.");
+    system_call::trap_init();
 
     println!("----------");
-    println!("[user programs]\n");
+    println!("[user programs]");
     user_init();
 
     #[cfg(test)]
