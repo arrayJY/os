@@ -7,7 +7,6 @@ use pic8259_simple::ChainedPics;
 use spin::Mutex;
 use x86_64::{
     structures::idt::{InterruptDescriptorTable, InterruptStackFrame},
-    PrivilegeLevel,
 };
 
 const PIC_1_OFFSET: u8 = 32;

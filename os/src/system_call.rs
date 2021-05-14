@@ -1,10 +1,5 @@
-use x86_64::{
-    registers,
-    structures::paging::{mapper::TranslateResult, OffsetPageTable, Translate},
-    VirtAddr,
-};
-
-use crate::memory::{physical_memory_offset, PAGE_SIZE, get_app_kernel_stack};
+mod lib;
+use lib::*;
 
 pub fn syscall(syscall_id: usize, args: [usize; 3]) -> isize {
     match syscall_id {

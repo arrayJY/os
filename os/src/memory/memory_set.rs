@@ -1,14 +1,13 @@
 use alloc::vec::Vec;
 use x86_64::{
     structures::paging::{
-        mapper::TranslateResult,
-        page::{Page, PageRange, PageRangeInclusive},
-        Mapper, OffsetPageTable, PageTableFlags, Size4KiB, Translate,
+        page::{Page, PageRangeInclusive},
+        Mapper, OffsetPageTable, PageTableFlags, Translate,
     },
     VirtAddr,
 };
 
-use super::{active_level_4_table, empty_page_table};
+use super::{active_level_4_table};
 use crate::memory::{physical_memory_offset, PAGE_SIZE};
 
 pub const KERNEL_START: usize = 0x0;

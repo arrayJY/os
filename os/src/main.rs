@@ -5,14 +5,13 @@
 #![reexport_test_harness_main = "test_main"]
 #![feature(global_asm)]
 
-use alloc::task;
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
 use os::{allocator::heap_init, exec::user_init, memory, system_call};
 extern crate alloc;
 #[allow(unused_imports)]
 use os::println;
-use x86_64::{structures::paging::Translate, VirtAddr};
+use x86_64::{VirtAddr};
 global_asm!(include_str!("link_app.S"));
 
 entry_point!(kernel_main);

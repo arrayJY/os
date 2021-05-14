@@ -1,7 +1,6 @@
 use x86_64::{
-    registers::control::Cr3Flags,
-    structures::paging::{OffsetPageTable, PageTable, PhysFrame, Size4KiB, Translate},
-    PhysAddr, VirtAddr,
+    structures::paging::{OffsetPageTable, PageTable, Translate},
+    VirtAddr,
 };
 
 use crate::task::{run_first, Task};

@@ -1,7 +1,6 @@
 use core::cell::RefCell;
 
 use lazy_static::lazy_static;
-use spin::{Mutex, MutexGuard};
 use x86_64::structures::paging::OffsetPageTable;
 use x86_64::VirtAddr;
 
@@ -22,13 +21,6 @@ pub struct TrapContext {
     pub entry_point: usize,
 }
 
-pub fn run_first() {
-    TASK_MANAGER.run_task(0)
-}
-pub fn stop_current_and_run_next() {
-    TASK_MANAGER.stop_current();
-    TASK_MANAGER.run_next();
-}
 
 pub struct Task {
     pub id: usize,
@@ -59,6 +51,7 @@ pub struct TaskManager {
     inner: RefCell<InnerTaskManager>,
     page_table: OffsetPageTable<'static>,
 }
+
 pub struct InnerTaskManager {
     pub tasks: Vec<Task>,
     pub current_task: usize,
@@ -70,9 +63,9 @@ impl TaskManager {
         use crate::gdt::{Selectors, GDT};
         use x86_64::instructions::segmentation::{load_ds, load_es};
 
-        let mut user_stack: usize = 0;
-        let mut user_entry_point: usize = 0;
-        let mut user_page_table: usize = 0;
+        let user_stack: usize;
+        let user_entry_point: usize;
+        let user_page_table: usize;
         {
             let mut inner = self.inner.borrow_mut();
             let task = &mut inner.tasks[id];
@@ -127,8 +120,6 @@ lazy_static! {
         TaskManager {
             task_num: get_app_num(),
             inner: {
-                use crate::memory;
-                use x86_64::VirtAddr;
                 RefCell::new(InnerTaskManager {
                     tasks: {
                         let mut v = Vec::new();
@@ -146,4 +137,12 @@ lazy_static! {
             },
         }
     };
+}
+pub fn run_first() {
+    TASK_MANAGER.run_task(0)
+}
+
+pub fn stop_current_and_run_next() {
+    TASK_MANAGER.stop_current();
+    TASK_MANAGER.run_next();
 }
