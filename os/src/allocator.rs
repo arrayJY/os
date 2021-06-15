@@ -6,8 +6,8 @@ use x86_64::{
     VirtAddr,
 };
 
-pub const HEAP_START: usize = 0x4000_0000_0000;
-pub const HEAP_SIZE: usize = 1024 * 1024; // 1MiB;
+pub const HEAP_START: usize = 0x5000000;
+pub const HEAP_SIZE: usize = 0x0100000; // 16MiB;
 
 pub struct Stupid;
 
