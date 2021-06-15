@@ -15,13 +15,48 @@ trap_start:
     pushq %rcx
     pushq %rbx
     pushq %rax
+    movq  %rsp, %rbx
+    callq current_kernel_stack
+    movq %rax, %rsp     #switch to kernel stack
+    leaq 0x78(%rbx), %rbx
+    pushq %rbx          #save user space pointer
+    movq -0x08(%rbx), %rax
+    pushq %rax
+    movq -0x10(%rbx), %rax
+    pushq %rax
+    movq -0x18(%rbx), %rax
+    pushq %rax
+    movq -0x20(%rbx), %rax
+    pushq %rax
+    movq -0x28(%rbx), %rax
+    pushq %rax
+    movq -0x30(%rbx), %rax
+    pushq %rax
+    movq -0x38(%rbx), %rax
+    pushq %rax
+    movq -0x40(%rbx), %rax
+    pushq %rax
+    movq -0x48(%rbx), %rax
+    pushq %rax
+    movq -0x50(%rbx), %rax
+    pushq %rax
+    movq -0x58(%rbx), %rax
+    pushq %rax
+    movq -0x60(%rbx), %rax
+    pushq %rax
+    movq -0x68(%rbx), %rax
+    pushq %rax
+    movq -0x70(%rbx), %rax
+    pushq %rax
+    movq -0x78(%rbx), %rax
+    pushq %rax
     movq  %rsp, %rdi
     call trap_handler
 
 .globl trap_ret
 trap_ret:
-    movq %rdi, %rsp
-    add $0x8, %rsp
+    add $0x10, %rsp
+    add $0x8, %rsp  # do not overwrite rax because it save the return value of syscall.
     popq %rbx
     popq %rcx
     popq %rdx
@@ -36,4 +71,10 @@ trap_ret:
     popq %r13
     popq %r14
     popq %r15
+    popq %rsp
     sysretq
+
+.globl trap_handler
+trap_handler:
+    call trap_syscall
+    call trap_ret

@@ -35,7 +35,8 @@ pub fn trap_init() {
             user_data_seg,
             kernel_code_seg,
             kernel_data_seg,
-        ).unwrap();
+        )
+        .unwrap();
         LStar::write(x86_64::VirtAddr::new(trap_start as u64))
     };
 }
@@ -57,6 +58,7 @@ pub struct TrapFrame {
     r13: u64,
     r14: u64,
     r15: u64,
+    rsp: u64,
 }
 
 global_asm!(include_str!("system_call/trap.S"));
@@ -65,39 +67,17 @@ extern "C" {
     #[inline]
     fn trap_start();
     #[inline]
-    fn trap_ret(user_stack_pointer: usize);
+    fn trap_ret();
 }
 
 #[no_mangle]
-fn trap_handler(trap_frame: &TrapFrame) -> ! {
-    // Switch to kernel stack.
+pub fn current_kernel_stack() -> usize {
     use crate::task::TASK_MANAGER;
-    unsafe {
-        asm!(
-        "mov rbx, rsp",
-        "mov rsp, {}",
-        "mov rax, [rbx+0x20]",
-        "push rax",
-        "mov rax, [rbx+0x18]",
-        "push rax",
-        "mov rax, [rbx+0x10]",
-        "push rax",
-        "mov rax, [rbx+0x08]",
-        "push rax",
-        "mov rax, [rbx+0x00]",
-        "push rax",
-        in(reg) TASK_MANAGER.current_task_kernel_stack(),
-        );
-    }
-    // System call.
-    trap_syscall(trap_frame);
-    // Return to user space.
-    unsafe {
-        trap_ret(trap_frame as *const TrapFrame as usize);
-    }
-    panic!("return from trap_handler.")
+    TASK_MANAGER.current_task_kernel_stack() as usize
 }
 
+
+#[no_mangle]
 fn trap_syscall(trap_frame: &TrapFrame) -> isize {
     syscall(
         trap_frame.rax as usize, //syscall id
