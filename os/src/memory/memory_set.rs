@@ -7,8 +7,11 @@ use x86_64::{
     VirtAddr,
 };
 
-use super::{active_level_4_table};
+use super::active_level_4_table;
 use crate::memory::{physical_memory_offset, PAGE_SIZE};
+use lazy_static::lazy_static;
+use spin::Mutex;
+use x86_64::structures::paging::mapper::TranslateError::PageNotMapped;
 
 pub const KERNEL_START: usize = 0x0;
 pub const USER_START: usize = 0x8000000;
@@ -30,6 +33,15 @@ impl MapArea {
             start_virt_addr,
             end_virt_addr,
             flags,
+        }
+    }
+
+    pub fn from(other: &MapArea) -> Self {
+        Self {
+            page_range: other.page_range,
+            start_virt_addr: other.start_virt_addr,
+            end_virt_addr: other.end_virt_addr,
+            flags: other.flags,
         }
     }
     pub fn map(&mut self, page_table: &mut OffsetPageTable) {
@@ -71,14 +83,26 @@ impl MapArea {
     pub fn map_one(&mut self, page: Page, page_table: &mut OffsetPageTable) {
         use crate::memory::alloc_frame;
         use crate::memory::FRAME_ALLOCATOR;
-        if let Err(x86_64::structures::paging::mapper::TranslateError::PageNotMapped) =
-        page_table.translate_page(page)
-        {
-            let frame = alloc_frame().unwrap();
-            let map_result = unsafe {
-                page_table.map_to(page, frame, self.flags, FRAME_ALLOCATOR.lock().get_mut())
-            };
-            map_result.expect("Map failed.").flush();
+
+        match page_table.translate_page(page) {
+            Err(PageNotMapped) => {
+                let frame = alloc_frame().unwrap();
+                let map_result = unsafe {
+                    page_table.map_to(page, frame, self.flags, FRAME_ALLOCATOR.lock().get_mut())
+                };
+                map_result.expect("Map failed.").flush();
+            }
+            /*
+            Ok(_) => {
+                page_table.unmap(page).unwrap();
+                let frame = alloc_frame().unwrap();
+                let map_result = unsafe {
+                    page_table.map_to(page, frame, self.flags, FRAME_ALLOCATOR.lock().get_mut())
+                };
+                map_result.expect("Map failed.").flush();
+            }
+             */
+            _ => {}
         }
     }
 }
@@ -130,14 +154,19 @@ impl MemorySet {
 
     pub fn remove_all_areas(&mut self) {
         let page_table = &mut self.page_table;
-        self.areas.iter_mut().rev().for_each(
-            |area| area.unmap(page_table)
-        );
+        self.areas
+            .iter_mut()
+            .rev()
+            .for_each(|area| area.unmap(page_table));
         self.areas.clear();
     }
     pub fn remove_area_with_start_addr(&mut self, start_addr: VirtAddr) {
-        if let Some((i, area)) = self.areas.iter_mut().enumerate()
-            .find(|(i, area)| area.page_range.start.start_address() == start_addr) {
+        if let Some((i, area)) = self
+            .areas
+            .iter_mut()
+            .enumerate()
+            .find(|(i, area)| area.page_range.start.start_address() == start_addr)
+        {
             area.unmap(&mut self.page_table);
             self.areas.remove(i);
         }
@@ -145,6 +174,25 @@ impl MemorySet {
 }
 
 impl MemorySet {
+    pub fn from(user_space: &MemorySet) -> Self {
+        let mut memory_set = Self::new();
+        let memory_offset = physical_memory_offset();
+        for area in user_space.areas.iter() {
+            let mut new_area = MapArea::from(area);
+            let data = {
+                let start = (user_space
+                    .page_table
+                    .translate_addr(area.start_virt_addr)
+                    .unwrap()
+                    .as_u64()
+                    + memory_offset) as *const u8;
+                let len = (area.end_virt_addr - area.start_virt_addr) as usize;
+                unsafe { core::slice::from_raw_parts(start, len) }
+            };
+            memory_set.push(new_area, Some(data));
+        }
+        memory_set
+    }
     pub fn from_elf(elf_data: &[u8]) -> (Self, usize, usize) {
         let mut memory_set = Self::new();
         let elf = xmas_elf::ElfFile::new(elf_data).expect("invalid elf!");
@@ -177,9 +225,9 @@ impl MemorySet {
                 );
             }
         }
-        //TODO: guard page
         let mut user_stack_bottom = max_page.start_address();
-        user_stack_bottom += 4096u64; // Page size = 4Kib
+        user_stack_bottom += 4096u64; //Guard Page
+
         let user_stack_top = user_stack_bottom + USER_STACK_SIZE;
         memory_set.push(
             MapArea::new(
@@ -198,4 +246,8 @@ impl MemorySet {
             elf.header.pt2.entry_point() as usize,
         )
     }
+}
+
+lazy_static! {
+    pub static ref KERNEL_SPACE: Mutex<MemorySet> = Mutex::new(MemorySet::new());
 }

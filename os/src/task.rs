@@ -16,11 +16,12 @@ pub enum TaskStatus {
     Stop,
 }
 
+#[repr(C)]
+#[derive(Debug, Clone)]
 pub struct TrapContext {
     pub user_stack: usize,
     pub entry_point: usize,
 }
-
 
 pub struct Task {
     pub id: usize,

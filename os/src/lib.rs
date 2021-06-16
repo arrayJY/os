@@ -19,6 +19,7 @@ pub mod system_call;
 pub mod vga;
 pub mod loader;
 pub mod task;
+pub mod process;
 
 extern crate alloc;
 

@@ -7,10 +7,10 @@ pub fn sys_write(buffer: *const u8, len: usize) -> isize {
 }
 
 pub fn sys_exit(exit_code: isize) -> ! {
-    use crate::task::{stop_current_and_run_next};
     use crate::println;
+    use crate::process::exit_current_and_run_next;
     println!("[kernel] Task exited with return code {}.", exit_code);
-    stop_current_and_run_next();
+    exit_current_and_run_next(exit_code);
     panic!("sys_exit never returns!");
 }
 

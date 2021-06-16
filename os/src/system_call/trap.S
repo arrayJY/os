@@ -55,7 +55,6 @@ trap_start:
 
 .globl trap_ret
 trap_ret:
-    add $0x10, %rsp
     add $0x8, %rsp  # do not overwrite rax because it save the return value of syscall.
     popq %rbx
     popq %rcx
@@ -77,4 +76,5 @@ trap_ret:
 .globl trap_handler
 trap_handler:
     call trap_syscall
+    add $0x10, %rsp
     call trap_ret

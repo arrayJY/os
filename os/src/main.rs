@@ -7,11 +7,11 @@
 
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
-use os::{allocator::heap_init, exec::user_init, memory, system_call};
+use os::{allocator::heap_init, exec::user_init, memory, process, system_call};
 extern crate alloc;
 #[allow(unused_imports)]
 use os::println;
-use x86_64::{VirtAddr};
+use x86_64::VirtAddr;
 global_asm!(include_str!("link_app.S"));
 
 entry_point!(kernel_main);
@@ -31,7 +31,9 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     println!("----------");
     println!("[user programs]");
-    user_init();
+    process::add_initproc();
+    process::run_processes();
+    // user_init();
 
     #[cfg(test)]
     test_main();

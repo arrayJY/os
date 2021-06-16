@@ -139,5 +139,7 @@ pub fn init_kernel_stack(mapper: &mut OffsetPageTable) {
 
 #[inline]
 pub fn get_app_kernel_stack(app_id: u64) -> u64 {
-    KERNEL_STACK_START + (app_id + 1) * (2 * KERNEL_STACK_SIZE)
+    use crate::memory::{GUARD_SIZE, KERNEL_STACK_END, KERNEL_STACK_SIZE};
+    let top = KERNEL_STACK_END - (app_id as u64) * (KERNEL_STACK_SIZE + GUARD_SIZE);
+    top
 }
