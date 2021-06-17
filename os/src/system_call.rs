@@ -7,7 +7,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 3]) -> isize {
         1 => sys_write(args[0] as *const u8, args[1]),
         2 => sys_exit(args[0] as isize),
         3 => sys_fork(),
-        // 4 => sys_exec(),
+        4 => sys_exec(args[0] as *const u8),
         // 5 => sys_wait(),
         _ => panic!("Unsupported system call."),
     }
@@ -95,8 +95,8 @@ extern "C" {
 
 #[no_mangle]
 pub fn current_kernel_stack() -> usize {
-    use crate::task::TASK_MANAGER;
-    TASK_MANAGER.current_task_kernel_stack() as usize
+    use crate::process::current_kernel_stack;
+    current_kernel_stack()
 }
 
 #[no_mangle]
