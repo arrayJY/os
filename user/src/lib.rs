@@ -37,6 +37,10 @@ pub fn exec(path: &str) -> isize { sys_exec(path) }
 
 pub fn yield_() -> isize { sys_yield() }
 
+pub fn wait(exit_code_ptr: &mut isize) -> isize { sys_waitpid(-1, exit_code_ptr as *mut isize) }
+
+pub fn waitpid(pid: usize, exit_code_ptr: *mut isize) -> isize { sys_waitpid(pid as isize, exit_code_ptr) }
+
 #[panic_handler]
 fn panic_handler(panic_info: &core::panic::PanicInfo) -> ! {
     let err = panic_info.message().unwrap();

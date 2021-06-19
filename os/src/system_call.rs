@@ -9,7 +9,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 3]) -> isize {
         3 => sys_yield(),
         4 => sys_fork(),
         5 => sys_exec(args[0] as *const u8),
-        // 5 => sys_wait(),
+        6 => sys_waitpid(args[0] as isize, args[1] as *mut isize),
         _ => panic!("Unsupported system call."),
     }
 }

@@ -130,7 +130,6 @@ pub fn exit_current_and_run_next(exit_code: isize) {
     let mut inner = process.inner_lock();
     inner.process_status = ProcessStatus::Zombie;
     inner.exit_code = exit_code;
-
     {
         let mut initproc_inner = INITPROC.inner_lock();
         for child in inner.children.iter() {

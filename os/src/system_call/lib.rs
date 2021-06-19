@@ -1,4 +1,3 @@
-
 pub fn sys_write(buffer: *const u8, len: usize) -> isize {
     use crate::print;
     let slice = unsafe { core::slice::from_raw_parts(buffer, len) };
@@ -13,9 +12,6 @@ pub fn sys_exit(exit_code: isize) -> ! {
     println!("[kernel] Task exited with return code {}.", exit_code);
     exit_current_and_run_next(exit_code);
     panic!("sys_exit never returns!");
-}
-pub fn sys_wait(pid: isize, exit_code: *mut isize) -> isize {
-    todo!()
 }
 pub fn sys_fork() -> isize {
     use crate::process::{current_process, manager::add_process};
@@ -54,4 +50,34 @@ pub fn sys_yield() -> isize {
     use crate::process::suspend_current_and_run_next;
     suspend_current_and_run_next();
     0
+}
+
+pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut isize) -> isize {
+    use crate::process::current_process;
+    let proc = current_process().unwrap();
+    let mut inner = proc.inner_lock();
+    if inner
+        .children
+        .iter()
+        .find(|p| pid == -1 || pid as usize == p.getpid())
+        .is_none()
+    {
+        return -1;
+    }
+    let r = inner
+        .children
+        .iter()
+        .enumerate()
+        .find(|(_, p)| p.inner_lock().is_zombie() && (pid == -1 || pid as usize == p.getpid()));
+    if let Some((idx, _)) = r {
+        let child = inner.children.remove(idx);
+        use alloc::sync::Arc;
+        assert_eq!(Arc::strong_count(&child), 1);
+        let pid = child.getpid();
+        let exit_code = child.inner_lock().exit_code;
+        unsafe { *exit_code_ptr = exit_code };
+        pid as isize
+    } else {
+        -2
+    }
 }

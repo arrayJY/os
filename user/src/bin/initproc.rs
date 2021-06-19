@@ -3,7 +3,8 @@
 
 #[macro_use]
 extern crate user_lib;
-use user_lib::{fork, exec, yield_};
+
+use user_lib::{fork, exec, yield_, wait};
 
 #[no_mangle]
 unsafe fn main() -> i32 {
@@ -11,7 +12,13 @@ unsafe fn main() -> i32 {
         exec("hello_world\0");
     } else {
         loop {
-            yield_();
+            let mut exit_code: isize = 0;
+            let pid = wait(&mut exit_code);
+            if pid == -1 || pid == -2 {
+                yield_();
+                continue;
+            }
+            println!("[initproc] Released a zombie process, pid={}, exit_code={}", pid, exit_code)
         }
     }
     0

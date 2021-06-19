@@ -9,7 +9,7 @@ use alloc::{
 };
 use spin::{Mutex, MutexGuard};
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum ProcessStatus {
     Ready,
     Running,
@@ -151,5 +151,8 @@ impl ProcessControlBlockInner {
             &mut *((self.process_context_ptr + core::mem::size_of::<ProcessContext>())
                 as *mut TrapFrame)
         }
+    }
+    pub fn is_zombie(&self) -> bool {
+        self.process_status == ProcessStatus::Zombie
     }
 }
