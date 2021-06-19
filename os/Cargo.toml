@@ -26,6 +26,11 @@ xmas-elf = "0.7.0"
 lazy_static = "1.4.0"
 features = ["spin_no_std"]
 
+[package.metadata.bootloader]
+boot-info-address = "0x4200000"
+kernel-stack-address = "0x4300000"
+kernel-stack-size = 256
+
 [package.metadata.bootimage]
 build-command = ["xbuild"]
 test-args = [

@@ -1,3 +1,4 @@
+/*
 use core::cell::RefCell;
 
 use lazy_static::lazy_static;
@@ -148,3 +149,4 @@ pub fn stop_current_and_run_next() {
     TASK_MANAGER.stop_current();
     TASK_MANAGER.run_next();
 }
+ */

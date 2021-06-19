@@ -7,11 +7,12 @@
 
 use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
-use os::{allocator::heap_init, exec::user_init, memory, process, system_call};
+use os::{allocator::heap_init, memory, process, system_call};
 extern crate alloc;
 #[allow(unused_imports)]
 use os::println;
 use x86_64::VirtAddr;
+use os::loader::list_apps;
 global_asm!(include_str!("link_app.S"));
 
 entry_point!(kernel_main);
@@ -27,13 +28,13 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
     println!("[kernel] Heap initialized.");
     memory::init_kernel_stack(&mut mapper);
     println!("[kernel] Kernel stack initialized.");
+    list_apps();
     system_call::trap_init();
 
     println!("----------");
     println!("[user programs]");
     process::add_initproc();
     process::run_processes();
-    // user_init();
 
     #[cfg(test)]
     test_main();

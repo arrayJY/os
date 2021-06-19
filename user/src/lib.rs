@@ -3,6 +3,7 @@
 #![no_std]
 #![feature(panic_info_message)]
 #![feature(global_asm)]
+
 mod syscall;
 pub mod console;
 
@@ -25,9 +26,16 @@ use syscall::*;
 pub fn write(buffer: &[u8]) -> isize {
     sys_write(buffer)
 }
+
 pub fn exit(exit_code: i32) -> isize {
     sys_exit(exit_code)
 }
+
+pub fn fork() -> isize { sys_fork() }
+
+pub fn exec(path: &str) -> isize { sys_exec(path) }
+
+pub fn yield_() -> isize { sys_yield() }
 
 #[panic_handler]
 fn panic_handler(panic_info: &core::panic::PanicInfo) -> ! {

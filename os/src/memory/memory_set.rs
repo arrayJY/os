@@ -8,10 +8,11 @@ use x86_64::{
 };
 
 use super::active_level_4_table;
-use crate::memory::{physical_memory_offset, PAGE_SIZE};
+use crate::memory::{empty_page_table, physical_memory_offset, PAGE_SIZE};
 use lazy_static::lazy_static;
 use spin::Mutex;
 use x86_64::structures::paging::mapper::TranslateError::PageNotMapped;
+use x86_64::structures::paging::PageTable;
 
 pub const KERNEL_START: usize = 0x0;
 pub const USER_START: usize = 0x8000000;
@@ -92,6 +93,9 @@ impl MapArea {
                 };
                 map_result.expect("Map failed.").flush();
             }
+            Ok(frame) => {
+                // crate::println!("Already map: {:?} -> {:?}", page, frame)
+            }
             /*
             Ok(_) => {
                 page_table.unmap(page).unwrap();
@@ -114,14 +118,9 @@ pub struct MemorySet {
 
 impl MemorySet {
     pub fn new() -> Self {
-        let physical_memory_offset = VirtAddr::new(physical_memory_offset());
+        use crate::memory::kernel_mapped_new_page_table;
         Self {
-            page_table: unsafe {
-                OffsetPageTable::new(
-                    active_level_4_table(physical_memory_offset),
-                    physical_memory_offset,
-                )
-            },
+            page_table: kernel_mapped_new_page_table(),
             areas: Vec::new(),
         }
     }
@@ -172,29 +171,48 @@ impl MemorySet {
         }
     }
 }
+impl Drop for MemorySet {
+    fn drop(&mut self) {
+        use alloc::boxed::Box;
+        unsafe { Box::from_raw(self.page_table.level_4_table() as *mut PageTable) };
+    }
+}
 
 impl MemorySet {
     pub fn from(user_space: &MemorySet) -> Self {
         let mut memory_set = Self::new();
-        let memory_offset = physical_memory_offset();
+        let physical_memory_offset = physical_memory_offset();
         for area in user_space.areas.iter() {
             let mut new_area = MapArea::from(area);
-            let data = {
-                let start = (user_space
-                    .page_table
-                    .translate_addr(area.start_virt_addr)
-                    .unwrap()
-                    .as_u64()
-                    + memory_offset) as *const u8;
-                let len = (area.end_virt_addr - area.start_virt_addr) as usize;
-                unsafe { core::slice::from_raw_parts(start, len) }
-            };
-            memory_set.push(new_area, Some(data));
+            memory_set.push(new_area, None);
+            for page in area.page_range {
+                let src = {
+                    let mut src = user_space
+                        .page_table
+                        .translate_page(page)
+                        .unwrap()
+                        .start_address()
+                        .as_u64();
+                    src += physical_memory_offset;
+                    let len = 4096.min(area.end_virt_addr - page.start_address()) as usize;
+                    unsafe { core::slice::from_raw_parts(src as usize as *const u8, len) }
+                };
+                let dst = unsafe {
+                    let mut dst = memory_set
+                        .page_table
+                        .translate_page(page)
+                        .unwrap()
+                        .start_address()
+                        .as_u64();
+                    dst += physical_memory_offset;
+                    core::slice::from_raw_parts_mut(dst as usize as *mut u8, src.len())
+                };
+                dst.copy_from_slice(src);
+            }
         }
         memory_set
     }
-    pub fn from_elf(elf_data: &[u8]) -> (Self, usize, usize) {
-        let mut memory_set = Self::new();
+    pub fn read_elf(&mut self, elf_data: &[u8]) -> (usize, usize) {
         let elf = xmas_elf::ElfFile::new(elf_data).expect("invalid elf!");
         let elf_header = elf.header;
         assert_eq!(
@@ -219,7 +237,7 @@ impl MemorySet {
                 }
                 let map_area = MapArea::new(start_virt_addr, end_virt_addr, flags);
                 max_page = map_area.page_range.end;
-                memory_set.push(
+                self.push(
                     map_area,
                     Some(&elf.input[ph.offset() as usize..(ph.offset() + ph.file_size()) as usize]),
                 );
@@ -229,7 +247,7 @@ impl MemorySet {
         user_stack_bottom += 4096u64; //Guard Page
 
         let user_stack_top = user_stack_bottom + USER_STACK_SIZE;
-        memory_set.push(
+        self.push(
             MapArea::new(
                 user_stack_bottom,
                 user_stack_top,
@@ -241,10 +259,14 @@ impl MemorySet {
         );
 
         (
-            memory_set,
             user_stack_top.as_u64() as usize,
             elf.header.pt2.entry_point() as usize,
         )
+    }
+    pub fn from_elf(elf_data: &[u8]) -> (Self, usize, usize) {
+        let mut memory_set = Self::new();
+        let (user_stack_top, entry_point) = memory_set.read_elf(elf_data);
+        (memory_set, user_stack_top, entry_point)
     }
 }
 

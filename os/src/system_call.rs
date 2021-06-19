@@ -6,8 +6,9 @@ pub fn syscall(syscall_id: usize, args: [usize; 3]) -> isize {
     match syscall_id {
         1 => sys_write(args[0] as *const u8, args[1]),
         2 => sys_exit(args[0] as isize),
-        3 => sys_fork(),
-        4 => sys_exec(args[0] as *const u8),
+        3 => sys_yield(),
+        4 => sys_fork(),
+        5 => sys_exec(args[0] as *const u8),
         // 5 => sys_wait(),
         _ => panic!("Unsupported system call."),
     }
@@ -42,6 +43,7 @@ pub fn trap_init() {
 }
 
 #[repr(C)]
+#[derive(Debug, Clone)]
 pub struct TrapFrame {
     pub rax: u64,
     pub rbx: u64,

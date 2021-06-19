@@ -76,6 +76,6 @@ trap_ret:
 .globl trap_handler
 trap_handler:
     call trap_syscall
-    add $0x18, %rsp
+    add $0x10, %rsp
     pushq %rax # save return value on the stack
-    call trap_ret
+    jmp trap_ret

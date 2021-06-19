@@ -3,7 +3,6 @@ use crate::memory::memory_set::MemorySet;
 use crate::process::pid::alloc_pid;
 use crate::process::ProcessorInner;
 use crate::system_call::TrapFrame;
-use crate::task::{TaskStatus, TrapContext};
 use alloc::{
     sync::{Arc, Weak},
     vec::Vec,
@@ -67,6 +66,9 @@ impl ProcessControlBlock {
     pub fn getpid(&self) -> usize {
         self.pid.0
     }
+    pub fn get_trap_frame(&self) -> &'static mut TrapFrame {
+        self.inner_lock().get_trap_frame()
+    }
     pub fn new(elf_data: &[u8]) -> Self {
         let (memory_set, user_stack, entry_point) = MemorySet::from_elf(elf_data);
         let pid = alloc_pid();
@@ -97,14 +99,13 @@ impl ProcessControlBlock {
         task_control_block
     }
     pub fn exec(&self, elf_data: &[u8]) {
-        let (memory_set, user_stack, entry_point) = MemorySet::from_elf(elf_data);
-        let mut trap_frame = TrapFrame::new();
         let mut inner = self.inner_lock();
+        inner.memory_set.remove_all_areas();
+        let (user_stack, entry_point) = inner.memory_set.read_elf(elf_data);
+        let trap_frame = inner.get_trap_frame();
         trap_frame.rsp = user_stack as u64; // User stack
         trap_frame.rcx = entry_point as u64; // Return address from syscall
         trap_frame.r11 = 0x203; // RFlags
-        self.kernel_stack.push_to_top(trap_frame, 0);
-        inner.memory_set = memory_set
     }
     pub fn fork(self: &Arc<ProcessControlBlock>) -> Arc<ProcessControlBlock> {
         let mut parent_inner = self.inner_lock();
@@ -114,6 +115,13 @@ impl ProcessControlBlock {
         let trap_frame_size = core::mem::size_of::<TrapFrame>();
         let process_context_ptr =
             kernel_stack.push_to_top(ProcessContext::return_from_trap(), trap_frame_size);
+        let parent_trap_frame = {
+            let parent_trap_frame_ptr = (parent_inner.process_context_ptr
+                + core::mem::size_of::<ProcessContext>())
+                as *const TrapFrame;
+            unsafe { &*parent_trap_frame_ptr }
+        };
+        kernel_stack.push_to_top(parent_trap_frame.clone(), 0);
         let process_control_block = Arc::new(ProcessControlBlock {
             pid,
             kernel_stack,
@@ -137,5 +145,11 @@ impl ProcessControlBlockInner {
     }
     pub fn get_process_context_ptr2(&self) -> *const usize {
         &self.process_context_ptr as *const usize
+    }
+    pub fn get_trap_frame(&self) -> &'static mut TrapFrame {
+        unsafe {
+            &mut *((self.process_context_ptr + core::mem::size_of::<ProcessContext>())
+                as *mut TrapFrame)
+        }
     }
 }

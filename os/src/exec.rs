@@ -1,3 +1,4 @@
+/*
 use x86_64::{
     structures::paging::{OffsetPageTable, PageTable, Translate},
     VirtAddr,
@@ -34,3 +35,4 @@ pub unsafe extern "C" fn jump_to_user_space(
         options(noreturn)
     );
 }
+ */

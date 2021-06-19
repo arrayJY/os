@@ -3,13 +3,12 @@ use x86_64::structures::paging::{PageTable, Translate};
 use x86_64::VirtAddr;
 global_asm!(include_str!("switch.S"));
 
-pub fn switch_page_table(current_process: &ProcessControlBlock, target_process: &ProcessControlBlock) {
+pub fn switch_page_table(current_process: &ProcessControlBlock, target_process: &ProcessControlBlock) -> usize {
     let offset = crate::memory::physical_memory_offset();
     let translator = &mut current_process.inner_lock().memory_set.page_table;
     let target_page_table: *const PageTable = target_process.inner_lock().memory_set.page_table.level_4_table();
     let phys_addr = translator.translate_addr(VirtAddr::new(target_page_table as u64)).unwrap();
-    let page_table_addr = phys_addr.as_u64() + offset;
-    unsafe { switch_mm(page_table_addr as usize) };
+    (phys_addr.as_u64() + offset) as usize
 }
 
 extern "C" {
