@@ -1,4 +1,4 @@
-use super::write;
+use super::{write, read};
 use core::fmt::{self, Write};
 struct Stdout;
 
@@ -25,4 +25,10 @@ macro_rules! println {
     ($fmt: literal $(, $($arg: tt)+)?) => {
         $crate::console::print(format_args!(concat!($fmt, "\n") $(, $($arg)+)?));
     }
+}
+
+pub fn getchar() -> u8 {
+    let mut buffer = [0u8; 1];
+    read(&mut buffer);
+    buffer[0]
 }

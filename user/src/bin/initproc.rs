@@ -9,7 +9,7 @@ use user_lib::{fork, exec, yield_, wait};
 #[no_mangle]
 unsafe fn main() -> i32 {
     if fork() == 0 {
-        exec("hello_world\0");
+        exec("user_shell\0");
     } else {
         loop {
             let mut exit_code: isize = 0;

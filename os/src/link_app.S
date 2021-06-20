@@ -3,15 +3,17 @@
     .section .data
     .global _num_app
 _num_app:
-    .quad 2
+    .quad 3
     .quad app_0_start
     .quad app_1_start
-    .quad app_1_end
+    .quad app_2_start
+    .quad app_2_end
 
     .global _app_names
 _app_names:
     .string "hello_world"
     .string "initproc"
+    .string "user_shell"
 
     .section .data
     .global app_0_start
@@ -28,3 +30,11 @@ app_0_end:
 app_1_start:
     .incbin "../user/target/x86_64-os/release/initproc"
 app_1_end:
+
+    .section .data
+    .global app_2_start
+    .global app_2_end
+    .align 4
+app_2_start:
+    .incbin "../user/target/x86_64-os/release/user_shell"
+app_2_end:

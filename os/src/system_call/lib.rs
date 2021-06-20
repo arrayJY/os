@@ -6,6 +6,31 @@ pub fn sys_write(buffer: *const u8, len: usize) -> isize {
     len as isize
 }
 
+
+pub fn sys_read(buffer: *mut u8, len: usize) -> isize {
+    assert_eq!(len, 1, "Only support read len 1.");
+    use crate::process::suspend_current_and_run_next;
+    use crate::interrupts::STDIN_BUFFER;
+    use x86_64::instructions::interrupts::without_interrupts;
+    let mut c: u8 = 0;
+    loop {
+        without_interrupts(|| {
+            if let Some(ch) = STDIN_BUFFER.lock().pop() {
+                c = ch;
+            }
+        });
+        if c == 0 {
+            suspend_current_and_run_next();
+            continue;
+        } else {
+            break;
+        }
+    }
+    let buffer = unsafe { core::slice::from_raw_parts_mut(buffer, len) };
+    buffer[0] = c;
+    1
+}
+
 pub fn sys_exit(exit_code: isize) -> ! {
     use crate::println;
     use crate::process::exit_current_and_run_next;

@@ -41,6 +41,8 @@ pub fn wait(exit_code_ptr: &mut isize) -> isize { sys_waitpid(-1, exit_code_ptr 
 
 pub fn waitpid(pid: usize, exit_code_ptr: *mut isize) -> isize { sys_waitpid(pid as isize, exit_code_ptr) }
 
+pub fn read(buffer: &mut [u8]) -> isize { sys_read(buffer) }
+
 #[panic_handler]
 fn panic_handler(panic_info: &core::panic::PanicInfo) -> ! {
     let err = panic_info.message().unwrap();

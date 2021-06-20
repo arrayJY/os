@@ -4,12 +4,13 @@ use lib::*;
 #[no_mangle]
 pub fn syscall(syscall_id: usize, args: [usize; 3]) -> isize {
     match syscall_id {
-        1 => sys_write(args[0] as *const u8, args[1]),
-        2 => sys_exit(args[0] as isize),
-        3 => sys_yield(),
-        4 => sys_fork(),
-        5 => sys_exec(args[0] as *const u8),
-        6 => sys_waitpid(args[0] as isize, args[1] as *mut isize),
+        1 => sys_read(args[0] as *mut u8, args[1]),
+        2 => sys_write(args[0] as *const u8, args[1]),
+        3 => sys_exit(args[0] as isize),
+        4 => sys_yield(),
+        5 => sys_fork(),
+        6 => sys_exec(args[0] as *const u8),
+        7 => sys_waitpid(args[0] as isize, args[1] as *mut isize),
         _ => panic!("Unsupported system call."),
     }
 }

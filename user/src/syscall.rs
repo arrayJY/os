@@ -1,6 +1,7 @@
 #[repr(usize)]
 pub enum SystemCall {
-    SysWrite = 1,
+    SysRead = 1,
+    SysWrite,
     SysExit,
     SysYield,
     SysFork,
@@ -16,6 +17,14 @@ impl SystemCall {
         self as usize
     }
 }
+
+pub fn sys_read(buffer: &mut [u8]) -> isize {
+    unsafe {
+        system_call(SystemCall::SysRead, buffer.as_mut_ptr() as usize, buffer.len(), 0)
+    }
+}
+
+
 
 pub fn sys_write(buffer: &[u8]) -> isize {
     unsafe {
@@ -43,6 +52,7 @@ pub fn sys_exec(path: &str) -> isize {
 pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut isize) -> isize {
     unsafe { system_call(SystemCall::SysWaitPID, pid as usize, exit_code_ptr as usize, 0) }
 }
+
 
 
 global_asm!("\

@@ -5,9 +5,7 @@ use exception_handlers::*;
 use lazy_static::lazy_static;
 use pic8259_simple::ChainedPics;
 use spin::Mutex;
-use x86_64::{
-    structures::idt::{InterruptDescriptorTable, InterruptStackFrame},
-};
+use x86_64::structures::idt::{InterruptDescriptorTable, InterruptStackFrame};
 
 const PIC_1_OFFSET: u8 = 32;
 const PIC_2_OFFSET: u8 = PIC_1_OFFSET + 8;
@@ -36,7 +34,7 @@ pub static PIC: Mutex<ChainedPics> =
     Mutex::new(unsafe { ChainedPics::new(PIC_1_OFFSET, PIC_2_OFFSET) });
 
 lazy_static! {
-    static ref IDT: InterruptDescriptorTable = {
+    pub static ref IDT: InterruptDescriptorTable = {
         let mut idt = InterruptDescriptorTable::new();
         idt.divide_error.set_handler_fn(divide_error_handler);
         unsafe {
@@ -49,9 +47,11 @@ lazy_static! {
         };
         idt.breakpoint.set_handler_fn(breakpoint_handler);
         idt.overflow.set_handler_fn(overflow_handler);
-        idt.bound_range_exceeded.set_handler_fn(bound_range_exceeded_handler);
+        idt.bound_range_exceeded
+            .set_handler_fn(bound_range_exceeded_handler);
         idt.invalid_opcode.set_handler_fn(invalid_opcode_handler);
-        idt.device_not_available.set_handler_fn(device_not_available_handler);
+        idt.device_not_available
+            .set_handler_fn(device_not_available_handler);
         unsafe {
             idt.double_fault
                 .set_handler_fn(double_fault_handler)
@@ -65,10 +65,12 @@ lazy_static! {
         idt.general_protection_fault
             .set_handler_fn(general_protection_fault_handler);
         idt.page_fault.set_handler_fn(page_fault_handler);
-        idt.x87_floating_point.set_handler_fn(x87_floating_point_handler);
+        idt.x87_floating_point
+            .set_handler_fn(x87_floating_point_handler);
         idt.alignment_check.set_handler_fn(alignment_check_handler);
         idt.machine_check.set_handler_fn(machine_check_handler);
-        idt.simd_floating_point.set_handler_fn(simd_floating_point_handler);
+        idt.simd_floating_point
+            .set_handler_fn(simd_floating_point_handler);
         idt.virtualization.set_handler_fn(virtualization_handler);
         idt.security_exception.set_handler_fn(security_handler);
         idt[Interrupt::Timer.as_usize()].set_handler_fn(timer_handler);
@@ -82,6 +84,10 @@ extern "x86-interrupt" fn timer_handler(_stack_frame: &mut InterruptStackFrame) 
     Interrupt::Timer.end_of_interrupt();
 }
 
+use alloc::vec::Vec;
+lazy_static! {
+    pub static ref STDIN_BUFFER: Mutex<Vec<u8>> = Mutex::new(Vec::new());
+}
 extern "x86-interrupt" fn keyboard_handler(_stack_frame: &mut InterruptStackFrame) {
     use pc_keyboard::{layouts, DecodedKey, HandleControl, Keyboard, ScancodeSet1};
     use x86_64::instructions::port::Port;
@@ -95,15 +101,15 @@ extern "x86-interrupt" fn keyboard_handler(_stack_frame: &mut InterruptStackFram
     let mut keyboard = KEYBOARD.lock();
     let mut port = Port::new(0x60);
     let code: u8 = unsafe { port.read() };
+    let mut lock = STDIN_BUFFER.lock();
     if let Ok(Some(key_event)) = keyboard.add_byte(code) {
         if let Some(key) = keyboard.process_keyevent(key_event) {
             match key {
-                DecodedKey::Unicode(ch) => print!("{}", ch),
+                DecodedKey::Unicode(ch) => lock.push(ch as u8),
                 DecodedKey::RawKey(key) => print!("{:?}", key),
             }
         }
     }
-
     Interrupt::Keyboard.end_of_interrupt();
 }
 
