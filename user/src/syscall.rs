@@ -62,7 +62,7 @@ system_call:
     movq %rsi, %rdi
     movq %rdx, %rsi
     movq %rcx, %rdx
-    leaq 0x2(%rip), %rcx
+    leaq 0x0(%rip), %rcx
     syscall
     retq
 ");

@@ -85,6 +85,7 @@ extern "x86-interrupt" fn timer_handler(_stack_frame: &mut InterruptStackFrame) 
 }
 
 use alloc::vec::Vec;
+use pc_keyboard::KeyCode;
 lazy_static! {
     pub static ref STDIN_BUFFER: Mutex<Vec<u8>> = Mutex::new(Vec::new());
 }
@@ -106,7 +107,10 @@ extern "x86-interrupt" fn keyboard_handler(_stack_frame: &mut InterruptStackFram
         if let Some(key) = keyboard.process_keyevent(key_event) {
             match key {
                 DecodedKey::Unicode(ch) => lock.push(ch as u8),
-                DecodedKey::RawKey(key) => print!("{:?}", key),
+                DecodedKey::RawKey(key) => match key {
+                    KeyCode::Enter => lock.push('\n' as u8),
+                    _ => {}
+                },
             }
         }
     }

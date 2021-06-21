@@ -16,6 +16,7 @@ use spin::Mutex;
 use x86_64::structures::paging::mapper::{TranslateResult, MappedFrame};
 use x86_64::structures::paging::{OffsetPageTable, PageTable, PageTableIndex, Translate, PhysFrame};
 use x86_64::VirtAddr;
+use crate::system_call::TrapFrame;
 
 pub struct Processor {
     inner: RefCell<ProcessorInner>,

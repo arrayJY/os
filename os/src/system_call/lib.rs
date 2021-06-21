@@ -1,3 +1,6 @@
+use crate::process::current_process;
+use crate::system_call::TrapFrame;
+
 pub fn sys_write(buffer: *const u8, len: usize) -> isize {
     use crate::print;
     let slice = unsafe { core::slice::from_raw_parts(buffer, len) };
@@ -6,11 +9,10 @@ pub fn sys_write(buffer: *const u8, len: usize) -> isize {
     len as isize
 }
 
-
 pub fn sys_read(buffer: *mut u8, len: usize) -> isize {
     assert_eq!(len, 1, "Only support read len 1.");
-    use crate::process::suspend_current_and_run_next;
     use crate::interrupts::STDIN_BUFFER;
+    use crate::process::suspend_current_and_run_next;
     use x86_64::instructions::interrupts::without_interrupts;
     let mut c: u8 = 0;
     loop {

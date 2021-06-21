@@ -18,7 +18,8 @@ unsafe fn main() -> i32 {
                 yield_();
                 continue;
             }
-            println!("[initproc] Released a zombie process, pid={}, exit_code={}", pid, exit_code)
+            println!("[initproc] Released a zombie process, pid={}, exit_code={}",
+                     pid, exit_code)
         }
     }
     0

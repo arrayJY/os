@@ -3,4 +3,12 @@
 A tool Operating System.
 
 ## Run
-`cargo xrun` will run the system with `qemu`.
+````
+cd user
+make
+cd ../os
+cargo install cargo-xbuild
+cargo install bootimage
+cargo xrun
+````
+

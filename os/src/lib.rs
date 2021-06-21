@@ -10,7 +10,6 @@
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 pub mod allocator;
-pub mod exec;
 pub mod gdt;
 pub mod interrupts;
 pub mod memory;
@@ -18,7 +17,6 @@ pub mod serial;
 pub mod system_call;
 pub mod vga;
 pub mod loader;
-pub mod task;
 pub mod process;
 
 extern crate alloc;
