@@ -37,9 +37,23 @@ pub fn exec(path: &str) -> isize { sys_exec(path) }
 
 pub fn yield_() -> isize { sys_yield() }
 
-pub fn wait(exit_code_ptr: &mut isize) -> isize { sys_waitpid(-1, exit_code_ptr as *mut isize) }
+pub fn wait(exit_code_ptr: &mut isize) -> isize {
+    loop {
+        match sys_waitpid(-1, exit_code_ptr as *mut isize) {
+            -2 => { yield_(); }
+            pid => return pid
+        }
+    }
+}
 
-pub fn waitpid(pid: usize, exit_code_ptr: *mut isize) -> isize { sys_waitpid(pid as isize, exit_code_ptr) }
+pub fn waitpid(pid: usize, exit_code_ptr: &mut isize) -> isize {
+    loop {
+        match sys_waitpid(pid as isize, exit_code_ptr) {
+            -2 => { yield_(); }
+            pid => return pid
+        }
+    }
+}
 
 pub fn read(buffer: &mut [u8]) -> isize { sys_read(buffer) }
 
