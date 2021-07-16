@@ -9,6 +9,7 @@ This project is highly inspired by [rCore-Tutorial-v3](https://github.com/rcore-
 * Virtual memory 
 * Dynamic memory management
 * Multiple processes management
+* Non-preemptive scheduling (FCFS)
 * An interactive shell in user space
 
 ## Run
