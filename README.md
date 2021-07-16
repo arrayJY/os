@@ -1,6 +1,6 @@
 # OS
 
-A tool x86-64 operating system.
+A toy x86-64 operating system.
 
 This project is highly inspired by [rCore-Tutorial-v3](https://github.com/rcore-os/rCore-Tutorial-v3)/[blog_os](https://github.com/phil-opp/blog_os)/[xv6](https://github.com/mit-pdos/xv6-public).
 
