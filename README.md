@@ -17,6 +17,8 @@ This project is highly inspired by [rCore-Tutorial-v3](https://github.com/rcore-
 You can run os with `qemu-system-x86_64`.
 
 ````bash
+cargo install cargo-binutils
+rustup component add llvm-tools-preview
 cd user
 make
 cd ../os
